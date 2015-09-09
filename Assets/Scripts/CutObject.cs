@@ -80,6 +80,12 @@ public class CutObject : MonoBehaviour
 		}
 	}
 
+	public void toggleAllCutItme (bool toggle){
+		foreach(CutItem cu in ProteinCutFilters){
+				cu.State = toggle;
+		}
+	}
+
     void Awake()
     {
         Debug.Log("Init cut object");
@@ -114,6 +120,7 @@ public class CutObject : MonoBehaviour
 		_tree.DisplayOnGame = value;
 		tree_isVisible = value;
 	}
+
 	public void showTree(Vector3 pos,Vector2 size){
 		_tree.DisplayOnGame = true;
 		_tree.Width = (int)size.x-20;

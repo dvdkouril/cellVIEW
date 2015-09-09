@@ -16,6 +16,7 @@ public class HandleSelection : MonoBehaviour {
 	public RecipeTreeUI tree;
 	public CanvasGroup cgroup;
 	public Toggle toggle;
+	public CutObject cute;
 
 	void Start () {
 		//cgroup = TextUI.GetComponentInParent<CanvasGroup> ();
@@ -50,6 +51,7 @@ public class HandleSelection : MonoBehaviour {
 
 	void Update () {
 		if (SceneManager.Instance.SelectedElement > 0) {
+			//cute.SetActive(true);
 			//activate canvas
 			//if (!TextUI.gameObject.activeSelf)
 		    //	TextUI.gameObject.SetActive (true);
@@ -68,9 +70,10 @@ public class HandleSelection : MonoBehaviour {
 			if (SceneManager.Instance.SelectedElement == -1){
 				if ( cgroup.alpha  > 0.0f )
 					cgroup.alpha = 0.0f;
+				//cute.SetActive(false);
 				//if (TextUI.gameObject.activeSelf)
 					//TextUI.gameObject.SetActive(false);
-
+				cute.toggleAllCutItme(false);
 			}
 		}
 		//update the imageSize

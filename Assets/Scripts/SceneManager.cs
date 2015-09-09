@@ -472,7 +472,9 @@ public class SceneManager : MonoBehaviour
 				}
 				//zoom to the selected object
 				int proteinId = (int)ProteinInstanceInfos[elementId].x;
-				Helper.FocusCameraOnGameObject(Camera.main,ProteinInstancePositions[elementId],ProteinBoundingSpheres[proteinId]);
+				Helper.FocusCameraOnGameObject(Camera.main,ProteinInstancePositions[elementId],ProteinBoundingSpheres[proteinId],ProteinNames[proteinId]);
+				//set cut object of the selection to apply on everything except selection
+
 			}
 			
 			SelectedElement = elementId;
