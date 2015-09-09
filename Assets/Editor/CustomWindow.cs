@@ -3,8 +3,57 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
+
+// Create a simple popup window that lets you delete a specific 
+// Component from the GameObjects you have selected
+//
+// Warning: There is no undo in this action.
+
+public class CutObjectWindow : EditorWindow
+{
+    public CutObject cutObject;
+    
+    void OnInspectorUpdate()
+    {
+        Repaint();
+    }
+
+    private Vector2 _scrollPos;
+
+    void OnGUI()
+    {
+        EditorUtility.SetDirty(PersistantSettings.Instance);
+
+        GUIStyle style_1 = new GUIStyle();
+        style_1.margin = new RectOffset(10, 10, 10, 10);
+
+        // Begin scroll view
+        _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, style_1, GUILayout.ExpandWidth(true));
+        {
+            GUILayout.Label("Cut object: " + this.cutObject.gameObject.name);
+
+            EditorGUILayout.Space();
+
+            //cutObject.Value1 = EditorGUILayout.Slider("Value 1: ", cutObject.Value1, 0, 1);
+            //cutObject.Value2 = EditorGUILayout.Slider("Value 2: ", cutObject.Value2, 0, 1);
+
+            EditorGUILayout.BeginVertical();
+            {
+                for (int i = 0; i < cutObject.ProteinCutFilters.Count; i++)
+                {
+                    cutObject.ProteinCutFilters[i].State = EditorGUILayout.ToggleLeft(cutObject.ProteinCutFilters[i].Name, cutObject.ProteinCutFilters[i].State);
+                    GUILayout.Space(3);
+                }
+            }
+            EditorGUILayout.EndVertical();
+        }
+        EditorGUILayout.EndScrollView();
+    }
+}
 
 public class CustomWindow : EditorWindow
 {
@@ -41,6 +90,36 @@ public class CustomWindow : EditorWindow
         GetWindow(typeof(CustomWindow));
     }
 
+    // Add menu item named "My Window" to the Window menu
+    [MenuItem("cellVIEW/Add Cut Plane")]
+    public static void AddCutPlane()
+    {
+        SceneManager.Instance.AddCutObject(CutType.Plane);
+    }
+
+    // Add menu item named "My Window" to the Window menu
+    [MenuItem("cellVIEW/Add Cut Sphere")]
+    public static void AddCutSphere()
+    {
+        SceneManager.Instance.AddCutObject(CutType.Sphere);
+    }
+
+    // Add menu item named "My Window" to the Window menu
+    [MenuItem("cellVIEW/Add Cut Cube")]
+    public static void AddCutCube()
+    {
+        SceneManager.Instance.AddCutObject(CutType.Cube);
+    }
+
+    //// Add menu item named "My Window" to the Window menu
+    //[MenuItem("cellVIEW/Load asset bundle")]
+    //public static void LoadAssetBundle()
+    //{
+    //    GameObject primitive = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+    //    var mesh = (Mesh)Instantiate(primitive.GetComponent<MeshFilter>().sharedMesh);
+    //    AssetDatabase.CreateAsset(mesh, "Assets/Cylinder.asset");
+    //}
+
     private bool showOptions;
     private bool showIngredients;
     private bool showLodOptions;
@@ -58,7 +137,12 @@ public class CustomWindow : EditorWindow
 			listesRecipe.Add ("Browse");
 			_sceneOptionsLabels=listesRecipe.ToArray();
 		}
+		if (CellPackLoader.UI_manager == null) {
+			CellPackLoader.UI_manager = GameObject.Find ("UImanager").GetComponent<UImanager>();
+		}
 	}
+
+
 
 	void OnGUI()
     {

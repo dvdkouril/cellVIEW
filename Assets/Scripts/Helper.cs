@@ -338,6 +338,28 @@ public static class Helper
         return floatArray;
     }
 
+    public static GameObject FindChildByName(GameObject root, string name)
+    {
+        GameObject child = null;
+
+        for (int i = 0; i < root.transform.childCount; i++)
+        {
+            child = root.transform.GetChild(i).gameObject;
+
+            if (string.CompareOrdinal(child.name, name) == 0)
+            {
+                return child;
+            }
+            else 
+            {
+                var child_2 = FindChildByName(child, name);
+                if (child_2 != null) return child_2;
+            }
+        }
+
+        return null;
+    }
+
     public static float[] FrustrumPlanesAsFloats(Camera _camera)
     {
         var planes = GeometryUtility.CalculateFrustumPlanes(_camera);
@@ -391,6 +413,11 @@ public static class Helper
 		Debug.Log("Downloading all ingredients file");
 		var www = new WWW("https://raw.githubusercontent.com/mesoscope/cellPACK_data/master/cellPACK_database_1.1.0/recipes/allIngredients.json");
 		var path = PdbLoader.DefaultPdbDirectory + "allIngredients.json";
+		if (!Directory.Exists(PdbLoader.DefaultPdbDirectory))
+		{
+			Directory.CreateDirectory(PdbLoader.DefaultPdbDirectory);
+		}
+
 		if (!File.Exists (path)) {
 			while (!www.isDone)
 			{
@@ -417,6 +444,14 @@ public static class Helper
 		var www = new WWW("https://raw.githubusercontent.com/mesoscope/cellPACK_data/master/cellPACK_database_1.1.0/autopack_recipe_cellview.json");
 		//var path = PdbLoader.DefaultPdbDirectory + "autopack_recipe.json";
 		var path = Application.dataPath + "/../Data/packing_results/autopack_recipe_cellview.json";
+		if (!Directory.Exists(Application.dataPath + "/../Data/"))
+		{
+			Directory.CreateDirectory(Application.dataPath + "/../Data/");
+		}
+		if (!Directory.Exists(Application.dataPath + "/../Data/packing_results/"))
+		{
+			Directory.CreateDirectory(Application.dataPath + "/../Data/packing_results/");
+		}
 		if (!File.Exists (path)) {
 			while (!www.isDone)
 			{
@@ -443,17 +478,26 @@ public static class Helper
 		string fname = GetFileName (url);
 		//var path = PdbLoader.DefaultPdbDirectory + fname;
 		var path = Application.dataPath + "/../Data/packing_results/"+fname;
+		if (!Directory.Exists(Application.dataPath + "/../Data/"))
+		{
+			Directory.CreateDirectory(Application.dataPath + "/../Data/");
+		}
+		if (!Directory.Exists(Application.dataPath + "/../Data/packing_results/"))
+		{
+			Directory.CreateDirectory(Application.dataPath + "/../Data/packing_results/");
+		}
 		if (!File.Exists (path)) {
 			while (!www.isDone)
 			{
 				#if UNITY_EDITOR
 				EditorUtility.DisplayProgressBar("Downloading recipes results file", "Downloading...", www.progress);
 				#endif
+
 			}
 			#if UNITY_EDITOR
 			EditorUtility.ClearProgressBar();
 			#endif
-			
+
 			if (!string.IsNullOrEmpty (www.error))
 				throw new Exception (fname + www.error);
 			//var path = (string.IsNullOrEmpty (dstPath) ? DefaultPdbDirectory : dstPath) + "allIngredients.json";
@@ -474,6 +518,27 @@ public static class Helper
 			fileName = hrefLink;
 		
 		return fileName;
+	}
+	public static void FocusCameraOnGameObject(Camera c, Vector4 center, float radius) {
+		//Bounds b = CalculateBounds(go);
+		//Vector3 max = b.size;
+		//float radius = Mathf.Max(max.x, Mathf.Max(max.y, max.z));
+		NavigateCamera nc = c.GetComponent<NavigateCamera> ();
+		Vector3 ce = new Vector3 (center.x, center.y, center.z)*PersistantSettings.Instance.Scale; 
+		float dist = radius /  (Mathf.Sin(c.fieldOfView * Mathf.Deg2Rad / 2f));
+		Debug.Log("Radius = " + radius*PersistantSettings.Instance.Scale + " dist = " + dist*PersistantSettings.Instance.Scale);
+		//Vector3 pos = UnityEngine.Random.onUnitSphere * dist + center;
+		//c.transform.position = pos;
+		//c.transform.LookAt(center);
+		//Ray r = new Ray(center,center-c.transform.position);
+		//c.transform.position = r.GetPoint (dist);
+		Vector3 direction = c.transform.position - ce;
+		nc.DampTargetPosition = ce - c.transform.forward*(radius*2.0f)*PersistantSettings.Instance.Scale;
+		nc.TargetPosition = ce;
+		nc.Distance = (radius * 2.0f) * PersistantSettings.Instance.Scale;
+		c.nearClipPlane = (radius) * PersistantSettings.Instance.Scale;
+		//c.transform.position = ce - c.transform.forward * radius/2.0f;
+		GameObject.Find ("_Selection").transform.position = ce;//*PersistantSettings.Instance.Scale;
 	}
 }
 

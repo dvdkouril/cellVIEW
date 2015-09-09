@@ -12,15 +12,17 @@ using UnityEditor;
 
 public static class CellPackLoader
 {
+	public static JSONNode resultData;
 	public static int current_color;
 	public static List<Vector3> ColorsPalette;
 	public static List<Vector3> ColorsPalette2;
 	public static Dictionary<int,List<int>> usedColors;
-   
+	public static UImanager UI_manager;
+
     public static void LoadCellPackResults()
     {
-        #if UNITY_EDITOR
-
+           //#if UNITY_EDITOR
+			Debug.Log("Loading");
             var directory = "";
 			var path = "";
 
@@ -33,8 +35,10 @@ public static class CellPackLoader
                 directory = Path.GetDirectoryName(PersistantSettings.Instance.LastSceneLoaded);
             }
 			if (SceneManager.Instance.sceneid==SceneManager.Instance.AllRecipes.Count){
-            	path = EditorUtility.OpenFilePanel("Select .cpr", directory, "cpr");
+				#if UNITY_EDITOR
+				path = EditorUtility.OpenFilePanel("Select .cpr", directory, "cpr");
             	if (string.IsNullOrEmpty(path)) return;
+				#endif
 			}
 			else {
 				string url = SceneManager.Instance.AllRecipes[SceneManager.Instance.sceneid][0]["resultfile"];
@@ -43,16 +47,31 @@ public static class CellPackLoader
 				path = Helper.GetResultsFile(url);
 			}
             PersistantSettings.Instance.LastSceneLoaded = path;
+
+			//change cursor to loading
+
             LoadIngredients(path);
+			//restore cursor
+
+            Debug.Log("*****");
+            Debug.Log("Total protein atoms number: " + SceneManager.Instance.TotalNumProteinAtoms);
 
             // Upload scene data to the GPU
             SceneManager.Instance.UploadAllData();
-			Debug.Log("*****");
-			Debug.Log("Total protein atoms number: " + SceneManager.Instance.TotalNumProteinAtoms);
-		#endif
-	}
-	
-	public static void LoadIngredients(string recipePath)
+
+            //
+            SceneManager.Instance.SetCutObjects();//set everything
+			// set up the treeView
+			#if UNITY_EDITOR
+			if (UI_manager.recipe_ingredient_ui!= null){
+				UI_manager.recipe_ingredient_ui.populateRecipe (resultData);
+			}
+			#endif
+   }
+
+    
+
+    public static void LoadIngredients(string recipePath)
     {
         Debug.Log("*****");
         Debug.Log("Loading scene: " + recipePath);
@@ -60,7 +79,8 @@ public static class CellPackLoader
         var cellPackSceneJsonPath = recipePath;//Application.dataPath + "/../Data/HIV/cellPACK/BloodHIV1.0_mixed_fixed_nc1.json";
         if (!File.Exists(cellPackSceneJsonPath)) throw new Exception("No file found at: " + cellPackSceneJsonPath);
 		//this assume a result file from cellpack, not a recipe file.
-        var resultData = Helper.ParseJson(cellPackSceneJsonPath);
+        resultData = Helper.ParseJson(cellPackSceneJsonPath);
+		
 		int nCompartemnts = 0;
         //we can traverse the json dictionary and gather ingredient source (PDB,center), sphereTree, instance.geometry if we want.
         //the recipe is optional as it will gave more information than just the result file.
@@ -79,8 +99,8 @@ public static class CellPackLoader
             nIngredients += resultData["compartments"][i]["surface"]["ingredients"].Count;
 			nCompartemnts+=2;
         }
-		//if (nCompartemnts < 5)
-		//	nCompartemnts = 5;
+		if (nCompartemnts < 2)
+			nCompartemnts = 2;
         //generate the palette
         //ColorsPalette   = ColorGenerator.Generate(nIngredients).Skip(2).ToList(); 
         //ColorsPalette = ColorGenerator.Generate(8).Skip(2).ToList();//.Skip(2).ToList();
@@ -90,7 +110,7 @@ public static class CellPackLoader
 		// the code that you want to measure comes here
         usedColors = new Dictionary<int, List<int>>();
         ColorsPalette2 = ColorPaletteGenerator.generate(
-				nCompartemnts, // Colors
+				6, // Colors
                 ColorPaletteGenerator.testfunction,
                 false, // Using Force Vector instead of k-Means
                 50, // Steps (quality)
@@ -128,11 +148,12 @@ public static class CellPackLoader
             current_color += 1;
         }
     }
-
+	//coroutine?
 	public static void AddRecipeIngredients(JSONNode recipeDictionary, Color baseColor, string prefix)
     {
 		for (int j = 0; j < recipeDictionary.Count; j++)
 		{
+			//UImanager.setProgress((float)j/(float)recipeDictionary.Count,"adding "+recipeDictionary["name"]);
             if (recipeDictionary[j]["nbCurve"] != null)
             {
                 AddCurveIngredients(recipeDictionary[j], prefix);
@@ -204,7 +225,7 @@ public static class CellPackLoader
         // Define cluster decimation levels
         var clusterLevels = (containsACarbonOnly)
             ? new List<float>() {0.85f, 0.25f, 0.1f}
-            : new List<float>() {0.10f, 0.05f, 0.01f};
+            : new List<float>() {0.20f, 0.10f, 0.05f};
         
         // Add ingredient type
         //SceneManager.Instance.AddIngredient(name, bounds, atomSpheres, color);

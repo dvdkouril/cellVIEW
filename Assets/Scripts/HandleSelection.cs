@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections;
 using UnityEngine.UI;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 [ExecuteInEditMode]
 public class HandleSelection : MonoBehaviour {
@@ -10,8 +13,12 @@ public class HandleSelection : MonoBehaviour {
 	public string iname;
 	public string description;
 	public GameObject TextUI;// description_ui;
-	void Start () {
+	public RecipeTreeUI tree;
+	public CanvasGroup cgroup;
+	public Toggle toggle;
 
+	void Start () {
+		//cgroup = TextUI.GetComponentInParent<CanvasGroup> ();
 	}
 	
 	string filterForPrefix(string name){
@@ -23,29 +30,49 @@ public class HandleSelection : MonoBehaviour {
 		return iname;
 	}
 	// Update is called once per frame
+
+	public void UpdateDescription(string new_iname,bool filter=false){
+		if (filter) new_iname = filterForPrefix(new_iname);
+		if (toggle.isOn)
+			cgroup.alpha = 1.0f;
+		//if (!TextUI.gameObject.activeSelf)
+		//	TextUI.gameObject.SetActive (true);
+		if (SceneManager.Instance.AllIngredients == null) 
+			SceneManager.Instance.AllIngredients = Helper.GetAllIngredientsInfo ();
+		iname = new_iname;
+		//iname = iname.Replace("_")//cytoplasme interior
+		description = SceneManager.Instance.AllIngredients [iname] ["description"];
+		if ((description == null) || (string.Equals (description, ""))) {
+			description = new_iname;
+		}
+		TextUI.GetComponentInChildren<Text>().text = description;
+	}
+
 	void Update () {
-		if (SceneManager.Instance.SelectedElement != -1) {
+		if (SceneManager.Instance.SelectedElement > 0) {
 			//activate canvas
-			if (!TextUI.transform.parent.gameObject.activeSelf)
-				TextUI.transform.parent.gameObject.SetActive (true);
+			//if (!TextUI.gameObject.activeSelf)
+		    //	TextUI.gameObject.SetActive (true);
 			if (SceneManager.Instance.AllIngredients == null) 
 				SceneManager.Instance.AllIngredients = Helper.GetAllIngredientsInfo ();
-			iname = SceneManager.Instance.ProteinNames [(int)SceneManager.Instance.ProteinInstanceInfos [SceneManager.Instance.SelectedElement].x];
+			var new_iname = SceneManager.Instance.ProteinNames [(int)SceneManager.Instance.ProteinInstanceInfos [SceneManager.Instance.SelectedElement].x];
 			//we need to remove the prefix if any
-			iname = filterForPrefix(iname);
-			//iname = iname.Replace("_")//cytoplasme interior
-			Debug.Log (SceneManager.Instance.AllIngredients.Count);
-			Debug.Log (SceneManager.Instance.AllIngredients [iname.ToString ()].ToString ());
-			description = SceneManager.Instance.AllIngredients [iname] ["description"];
-			Debug.Log ("handle " + iname + " instance " + SceneManager.Instance.SelectedElement.ToString ());
-			Debug.Log (description);
-			TextUI.GetComponent<Text>().text = description;
+			new_iname = filterForPrefix(new_iname);
+			if (string.Equals( new_iname,iname)) {return;}
+			UpdateDescription(new_iname);
+			var item = tree.getItemFromName(new_iname);
+			tree.m_myTreeView.SelectedItem = item;
 			//TextUI.GetComponent<RectTransform>()
 			//description_ui.CalcHeight(description, sizeX)
 		} else {
-			if (TextUI.transform.parent.gameObject.activeSelf)
-				TextUI.transform.parent.gameObject.SetActive(false);
+			if (SceneManager.Instance.SelectedElement == -1){
+				if ( cgroup.alpha  > 0.0f )
+					cgroup.alpha = 0.0f;
+				//if (TextUI.gameObject.activeSelf)
+					//TextUI.gameObject.SetActive(false);
 
+			}
 		}
+		//update the imageSize
 	}
 }

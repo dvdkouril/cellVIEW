@@ -4,6 +4,9 @@ using UnityEngine;
 [ExecuteInEditMode]
 public class ComputeBufferManager : MonoBehaviour
 {
+    //cutaways
+    public static int NumCutsMax = 100;
+
     public static int NumLodMax = 10;
     public static int NumProteinMax = 1000;
     public static int NumProteinAtomMax = 3000000;
@@ -48,6 +51,14 @@ public class ComputeBufferManager : MonoBehaviour
     public ComputeBuffer CurveControlPointsInfos;
     public ComputeBuffer CurveControlPointsNormals;
     public ComputeBuffer CurveControlPointsPositions;
+
+    // Cut Objects
+    public ComputeBuffer CutItems;
+    public ComputeBuffer CutInfos;
+    public ComputeBuffer CutScales;
+    public ComputeBuffer CutPositions;
+    public ComputeBuffer CutRotations;
+    public ComputeBuffer ProteinCutFilters;
 
     //*****//
 
@@ -139,11 +150,29 @@ public class ComputeBufferManager : MonoBehaviour
         if (CurveControlPointsInfos == null) CurveControlPointsInfos = new ComputeBuffer(NumCurveControlPointsMax, 16);
         if (CurveControlPointsNormals == null) CurveControlPointsNormals = new ComputeBuffer(NumCurveControlPointsMax, 16);
         if (CurveControlPointsPositions == null) CurveControlPointsPositions = new ComputeBuffer(NumCurveControlPointsMax, 16);
-	}
+
+        //*****//
+        
+        if (CutInfos == null) CutInfos = new ComputeBuffer(NumCutsMax, 16);
+        if (CutScales == null) CutScales = new ComputeBuffer(NumCutsMax, 16);
+        if (CutPositions == null) CutPositions = new ComputeBuffer(NumCutsMax, 16);
+        if (CutRotations == null) CutRotations = new ComputeBuffer(NumCutsMax, 16);
+        if (ProteinCutFilters == null) ProteinCutFilters = new ComputeBuffer(NumCutsMax * NumProteinMax, 4);
+
+    }
 	
 	// Flush buffers on exit
 	void ReleaseBuffers ()
     {
+        // Cutaways
+        if (CutInfos != null) { CutInfos.Release(); CutInfos = null; }
+        if (CutScales != null) { CutScales.Release(); CutScales = null; }
+        if (CutPositions != null) { CutPositions.Release(); CutPositions = null; }
+        if (CutRotations != null) { CutRotations.Release(); CutRotations = null; }
+        if (ProteinCutFilters != null) { ProteinCutFilters.Release(); ProteinCutFilters = null; }
+
+        //*****//
+
         if (LodInfos != null) { LodInfos.Release(); LodInfos = null; }
         if (SphereBatchBuffer != null) { SphereBatchBuffer.Release(); SphereBatchBuffer = null; }
 

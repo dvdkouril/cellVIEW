@@ -60,8 +60,8 @@ namespace SimpleJSON
         BoolValue        = 6,
         FloatValue        = 7,
     }
- 
-    public class JSONNode
+
+ 	public class JSONNode
     {
         #region common interface
         public virtual void Add(string aKey, JSONNode aItem){ }

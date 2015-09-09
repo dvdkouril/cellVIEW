@@ -4,16 +4,33 @@ using System.Linq;
 using UnityEngine;
 using SimpleJSON;
 
-enum InstanceState
-{
-    Null = -1,           // Instance will not be displayed
-    Normal = 0,          // Instance will be displayed with normal color
-    Highlighted = 1      // Instance will be displayed with highlighted color
-};
 
 [ExecuteInEditMode]
 public class SceneManager : MonoBehaviour
 {
+    // Cutaways
+    // No need to serialize tjat, the values are stored in scene game objects instead
+    [NonSerialized]
+    public List<int> CutItems = new List<int>();
+    [NonSerialized]
+    public List<Vector4> CutInfos = new List<Vector4>();
+    [NonSerialized]
+    public List<Vector4> CutScales = new List<Vector4>();
+    [NonSerialized]
+    public List<Vector4> CutPositions = new List<Vector4>();
+    [NonSerialized]
+    public List<Vector4> CutRotations = new List<Vector4>();
+    
+    // This serves as a cache to avoid calling GameObject.Find on every update because not efficient
+    // The cache will be filled automatically via the CutObject script onEnable
+    [NonSerialized]
+    public List<CutObject> CutObjects = new List<CutObject>();
+
+    [NonSerialized]
+    public List<int> ProteinCutFilters = new List<int>();
+
+    //*******
+
     // Scene data
     public List<Vector4> ProteinInstanceInfos = new List<Vector4>();
     public List<Vector4> ProteinInstancePositions = new List<Vector4>();
@@ -54,9 +71,23 @@ public class SceneManager : MonoBehaviour
     public int SelectedElement = -1;
     public int TotalNumProteinAtoms = 0;
 
+	enum InstanceState
+	{
+		Null = -1,           // Instance will not be displayed
+		Normal = 0,          // Instance will be displayed with normal color
+		Highlighted = 1,      // Instance will be displayed with highlighted color
+		Luminance = 3		 // Instance will be displayed in greyscale color
+	};
+
+
     public int NumProteinInstances
     {
         get { return ProteinInstancePositions.Count; }
+    }
+
+    public int NumCutObjects
+    {
+        get { return CutObjects.Count; }
     }
 
     public int NumDnaControlPoints
@@ -67,6 +98,11 @@ public class SceneManager : MonoBehaviour
     public int NumDnaSegments
     {
         get { return Math.Max(CurveControlPointsPositions.Count - 1, 0); }
+    }
+
+    public static bool CheckInstance()
+    {
+        return _instance != null;
     }
 
     //--------------------------------------------------------------
@@ -94,10 +130,58 @@ public class SceneManager : MonoBehaviour
     }
 
     //--------------------------------------------------------------
-    
+
+    public void AddCutObject(CutType type)
+    {
+        var gameObject = Instantiate(Resources.Load("Cut Objects/CutObject"), Vector3.zero, Quaternion.identity) as GameObject;
+		gameObject.name = "CutObjects_" + CutObjects.Count.ToString ();
+		CutObject cutObject = gameObject.GetComponent<CutObject> ();
+		cutObject.CutType = type;
+		cutObject.setTree ();
+		cutObject.name = gameObject.name;
+    }
+
     void Update()
     {
+        // Todo: proceed only if changes are made 
 
+        CutInfos.Clear();
+        CutScales.Clear();
+        CutPositions.Clear();
+        CutRotations.Clear();
+        ProteinCutFilters.Clear();
+
+        //Debug.Log(CutObjects.Count);
+
+        // Fill the protein cut filter buffer
+        for (var i = 0; i < ProteinNames.Count; i++)
+        {
+            foreach (var cutObject in CutObjects)
+            {
+                ProteinCutFilters.Add(Convert.ToInt32(cutObject.ProteinCutFilters[i].State));
+            }
+        }
+
+        //traverse all cuts (first-level children of a root GameObject Cuts
+        foreach (var cut in CutObjects)
+        {
+            if(cut == null) throw new Exception("Cut object not found");
+
+            CutScales.Add(cut.transform.localScale);
+            CutPositions.Add(cut.transform.position);
+            CutInfos.Add(new Vector4((float)cut.CutType, cut.Value1, cut.Value2, 0));
+            CutRotations.Add(Helper.QuanternionToVector4(cut.transform.rotation));
+            
+            // todo: add cutitems
+        }
+
+        ComputeBufferManager.Instance.CutInfos.SetData(CutInfos.ToArray());
+        ComputeBufferManager.Instance.CutScales.SetData(CutScales.ToArray());
+        ComputeBufferManager.Instance.CutPositions.SetData(CutPositions.ToArray());
+        ComputeBufferManager.Instance.CutRotations.SetData(CutRotations.ToArray());
+        ComputeBufferManager.Instance.ProteinCutFilters.SetData(ProteinCutFilters.ToArray());
+
+        //UploadAllData();
     }
 
     //--------------------------------------------------------------
@@ -350,18 +434,59 @@ public class SceneManager : MonoBehaviour
     
     #region Misc_functions
 
-    public void SetSelectedElement(int elementId)
-    {
-        Debug.Log("Selected element id: " + elementId);
-        SelectedElement = elementId;
-    }
+	public void SetSelectedElement(int elementId)
+	{
+		Debug.Log("Selected element id: " + elementId);
+		
+		if (elementId >= ProteinInstancePositions.Count) return;
+		if (SelectedElement == -2) {
+			//
+			for (int i=0;i<ProteinInstanceInfos.Count;i++){
+				ProteinInstanceInfos[i] = new Vector4(ProteinInstanceInfos[i].x, (int)InstanceState.Normal, ProteinInstanceInfos[i].z);
+			}
+		}
+		if (elementId == -1) {
+			//
+			for (int i=0;i<ProteinInstanceInfos.Count;i++){
+				ProteinInstanceInfos[i] = new Vector4(ProteinInstanceInfos[i].x, (int)InstanceState.Normal, ProteinInstanceInfos[i].z);
+			}
+		}
+		// If element id is different than the currently selected element
+		if (SelectedElement != elementId)
+		{
+			// if the currently selected instance was greater than -1 we reset the states
+			if (SelectedElement > -1)
+			{
+				//Debug.Log("Reset state");
+				ProteinInstanceInfos[SelectedElement] = new Vector4(ProteinInstanceInfos[SelectedElement].x, (int) InstanceState.Normal, ProteinInstanceInfos[SelectedElement].z);
+			}
+			
+			// if new selected element is greater than one update set and set position to game object
+			if (elementId > -1)
+			{
+				//Debug.Log("Update state");
+				ProteinInstanceInfos[elementId] = new Vector4(ProteinInstanceInfos[elementId].x, (int)InstanceState.Highlighted, ProteinInstanceInfos[elementId].z);
+				for (int i=0;i<ProteinInstanceInfos.Count;i++){
+					if (i==elementId) continue;
+					ProteinInstanceInfos[i] = new Vector4(ProteinInstanceInfos[i].x, (int)InstanceState.Luminance, ProteinInstanceInfos[i].z);
+				}
+				//zoom to the selected object
+				int proteinId = (int)ProteinInstanceInfos[elementId].x;
+				Helper.FocusCameraOnGameObject(Camera.main,ProteinInstancePositions[elementId],ProteinBoundingSpheres[proteinId]);
+			}
+			
+			SelectedElement = elementId;
+			ComputeBufferManager.Instance.ProteinInstanceInfos.SetData(ProteinInstanceInfos.ToArray());
+		}
+	}
 
     private void OnUnityReload()
     {
         Debug.Log("Reload Scene");
 
         //_instance.ClearScene();
-        _instance.UploadAllData();
+        UploadAllData();
+        ResetCutObjects();
     }
 
     // Scene data gets serialized on each reload, to clear the scene call this function
@@ -406,27 +531,36 @@ public class SceneManager : MonoBehaviour
         CurveControlPointsPositions.Clear();
         CurveControlPointsNormals.Clear();
         CurveControlPointsInfos.Clear();
+		//clear the treeView
+		var tree = GameObject.Find ("TreeView").GetComponent<RecipeTreeUI> ();
+		if (tree != null)
+			tree.ClearTree ();
     }
 
     private void CheckBufferSizes()
     {
-		if (Instance.NumLodLevels >= ComputeBufferManager.NumLodMax) throw new Exception("GPU buffer overflow NumLodLevels");
-		if (Instance.ProteinNames.Count >= ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow ProteinNames.Count");
-		if (Instance.ProteinAtoms.Count >= ComputeBufferManager.NumProteinAtomMax) throw new Exception("GPU buffer overflow ProteinAtoms.Count");
-		if (Instance.ProteinAtomClusters.Count >= ComputeBufferManager.NumProteinAtomClusterMax) throw new Exception("GPU buffer overflow ProteinAtomClusters.Count");
-		if (Instance.ProteinAtomClusterCount.Count >= ComputeBufferManager.NumProteinMax * ComputeBufferManager.NumLodMax) throw new Exception("GPU buffer overflow ProteinAtomClusterCount.Count");
-		if (Instance.ProteinInstancePositions.Count >= ComputeBufferManager.NumProteinInstancesMax) throw new Exception("GPU buffer overflow ProteinInstancePositions.Count");
+        if (Instance.NumCutObjects >= ComputeBufferManager.NumCutsMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinCutFilters.Count >= ComputeBufferManager.NumCutsMax * ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow");
+        if (Instance.NumLodLevels >= ComputeBufferManager.NumLodMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinNames.Count >= ComputeBufferManager.NumProteinMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinAtoms.Count >= ComputeBufferManager.NumProteinAtomMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinAtomClusters.Count >= ComputeBufferManager.NumProteinAtomClusterMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinAtomClusterCount.Count >= ComputeBufferManager.NumProteinMax * ComputeBufferManager.NumLodMax) throw new Exception("GPU buffer overflow");
+        if (Instance.ProteinInstancePositions.Count >= ComputeBufferManager.NumProteinInstancesMax) throw new Exception("GPU buffer overflow");
 
-		if (Instance.CurveIngredientsNames.Count >= ComputeBufferManager.NumCurveIngredientMax) throw new Exception("GPU buffer overflow CurveIngredientsNames.Count");
-		if (Instance.CurveControlPointsPositions.Count >= ComputeBufferManager.NumCurveControlPointsMax) throw new Exception("GPU buffer overflow CurveControlPointsPositions.Count");
-		if (Instance.CurveIngredientsAtoms.Count >= ComputeBufferManager.NumCurveIngredientAtomsMax) throw new Exception("GPU buffer overflow CurveIngredientsAtoms.Count");
+        if (Instance.CurveIngredientsNames.Count >= ComputeBufferManager.NumCurveIngredientMax) throw new Exception("GPU buffer overflow");
+        if (Instance.CurveControlPointsPositions.Count >= ComputeBufferManager.NumCurveControlPointsMax) throw new Exception("GPU buffer overflow");
+        if (Instance.CurveIngredientsAtoms.Count >= ComputeBufferManager.NumCurveIngredientAtomsMax) throw new Exception("GPU buffer overflow");
+
+
     }
 
     public void UploadAllData()
     {
         CheckBufferSizes();
 
-        //ComputeBufferManager.Instance.InitBuffers();
+        ComputeBufferManager.Instance.InitBuffers();
+
         ComputeBufferManager.Instance.LodInfos.SetData(PersistantSettings.Instance.LodLevels);
 
         // Upload ingredient data
@@ -463,7 +597,32 @@ public class SceneManager : MonoBehaviour
     {
         ComputeBufferManager.Instance.ProteinToggleFlags.SetData(ProteinToggleFlags.ToArray());
         ComputeBufferManager.Instance.CurveIngredientsToggleFlags.SetData(CurveIngredientToggleFlags.ToArray());
-    }  
+    }
+
+    public void ResetCutObjects()
+    {
+        var cutObjects = FindObjectsOfType<CutObject>();
+
+        foreach (var cutObject in cutObjects)
+        {
+            cutObject.ResetCutItems(ProteinNames);
+        }
+    }
+
+
+    public void SetCutObjects()
+    {
+        var cutObjects = FindObjectsOfType<CutObject>();
+		int i = 0;
+        foreach (var cutObject in cutObjects)
+        {
+            cutObject.ProteinCutFilters.Clear();
+            cutObject.SetCutItems(ProteinNames);
+			cutObject.setTree();
+			cutObject.tagid = i;
+			i+=1;
+        }
+    }
 
     #endregion
 }

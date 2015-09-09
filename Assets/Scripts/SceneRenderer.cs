@@ -25,8 +25,12 @@ public class SceneRenderer : MonoBehaviour
 
     /*****/
     private int frameCount = 0;
-    private bool _rightMouseDown = false;
-    private Vector2 _mousePos = new Vector2();
+
+	/***this is handle in the NavigationCamera****/
+	//[HideInInspector]
+    public bool _rightMouseDown = false;
+	[HideInInspector]
+	public Vector2 _mousePos = new Vector2();
 
     /*****/
 
@@ -76,16 +80,16 @@ public class SceneRenderer : MonoBehaviour
         }
     }
 
-    void OnGUI()
-    {
+    //void OnGUI()
+    //{
         // Listen mouse click events
         //if (Event.current.type == EventType.MouseDown && Event.current.modifiers == EventModifiers.Control && Event.current.button == 0)
-        if (Event.current.type == EventType.MouseDown && Event.current.button == 1)
-        {
-            _rightMouseDown = true;
-            _mousePos = Event.current.mousePosition;
-        }
-    }
+     //   if (Event.current.type == EventType.MouseDown && Event.current.button == 1)
+     //   {
+     //       _rightMouseDown = true;
+     //       _mousePos = Event.current.mousePosition;
+     //   }
+    //}
 
     void SetContourShaderParams()
     {
@@ -125,7 +129,7 @@ public class SceneRenderer : MonoBehaviour
         _renderCurveIngredientsMaterial.SetBuffer("_DnaControlPoints", ComputeBufferManager.Instance.CurveControlPointsPositions);
     }
 
-    void SetProteinShaderParams()
+    private void SetProteinShaderParams()
     {
         // Protein params
         _renderProteinsMaterial.SetInt("_EnableLod", Convert.ToInt32(PersistantSettings.Instance.EnableLod));
@@ -278,6 +282,14 @@ public class SceneRenderer : MonoBehaviour
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_ProteinClusterCount", ComputeBufferManager.Instance.ProteinAtomClusterCount);
         ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_ProteinClusterStart", ComputeBufferManager.Instance.ProteinAtomClusterStart);
 
+        // Cutaway
+        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_NumCutObjects", SceneManager.Instance.NumCutObjects);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutInfos", ComputeBufferManager.Instance.CutInfos);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutScales", ComputeBufferManager.Instance.CutScales);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutPositions", ComputeBufferManager.Instance.CutPositions);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_CutRotations", ComputeBufferManager.Instance.CutRotations);
+        ComputeShaderManager.Instance.SphereBatchCS.SetBuffer(0, "_ProteinCutFilters", ComputeBufferManager.Instance.ProteinCutFilters);
+
         ComputeShaderManager.Instance.SphereBatchCS.Dispatch(0, SceneManager.Instance.NumProteinInstances, 1, 1);
 
         // Count sphere batches
@@ -384,12 +396,13 @@ public class SceneRenderer : MonoBehaviour
         GL.Clear(true, true, new Color(1, 1, 1, 1));
         Graphics.Blit(src, _compositeMaterial, 1);
 
-        // Blit final color buffer to dst buffer
-        Graphics.Blit(colorCompositeBuffer, dst);
-
         // Set final depth buffer to global depth
         Shader.SetGlobalTexture("_CameraDepthTexture", depthCompositeBuffer);
-        Shader.SetGlobalTexture("_CameraDepthNormalsTexture ", depthNormalsBuffer); // It is important to set this otherwise AO will show ghosts
+        Shader.SetGlobalTexture("_CameraDepthNormalsTexture ", depthNormalsBuffer);
+
+        // Blit final color buffer to dst buffer
+        Graphics.SetRenderTarget(dst.colorBuffer, dst.depthBuffer);
+        Graphics.Blit(colorCompositeBuffer, dst, _compositeMaterial, 0);
 
         /*** Object Picking ***/
 

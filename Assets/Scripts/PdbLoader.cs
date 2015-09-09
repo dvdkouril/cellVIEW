@@ -79,16 +79,19 @@ public static class PdbLoader
 
         url = url + WWW.EscapeURL(fileName + extension);
 
-        Debug.Log("Downloading pdb file");
-        var www = new WWW(url);
+		Debug.Log("Downloading pdb file "+url);
+		var www = new WWW(url);
 
-#if UNITY_EDITOR
+
         while (!www.isDone)
         {
-            EditorUtility.DisplayProgressBar("Downloading " + fileName, "Downloading...", www.progress);
+			#if UNITY_EDITOREditor
+			Utility.DisplayProgressBar("Downloading " + fileName, "Downloading...", www.progress);
+			#endif
         }
-        EditorUtility.ClearProgressBar();
-#endif
+		#if UNITY_EDITOREditor
+		EditorUtility.ClearProgressBar();
+		#endif
 
         if (!string.IsNullOrEmpty(www.error))
         {

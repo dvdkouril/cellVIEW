@@ -143,6 +143,11 @@ float3 CubicInterpolate(float3 y0, float3 y1, float3 y2,float3 y3, float mu)
 
 //-----------------------------------------------------------------------------------
 
+float4 ComputePlane(float3 normal, float3 inPoint)
+{
+	return float4(normalize(normal), -dot(normal, inPoint));
+}
+
 bool SpherePlaneTest(float4 plane, float4 sphere)
 {
 	return dot(plane.xyz, sphere.xyz - plane.xyz * -plane.w) + sphere.w > 0;
@@ -160,4 +165,16 @@ bool SphereFrustrumTest( float4 frustrumPlanes[6], float4 sphere)
 	inFrustrum = inFrustrum & SpherePlaneTest(frustrumPlanes[5], sphere);	
 
 	return !inFrustrum;
+}
+
+bool SphereSphereTest(float4 sphere, float4 atom)
+{
+	return (length(sphere.xyz - atom.xyz) <= sphere.w);
+}
+
+bool SphereCubeTest(float3 position, float4 rotation, float3 size, float4 sphere)
+{
+	
+	float3 d = abs(QuaternionTransform(float4(-rotation.x, -rotation.y, -rotation.z, rotation.w), sphere.xyz - position.xyz)) - size.xyz;
+	return min(max(d.x,max(d.y,d.z)),0.0) + length(max(d,0.0)) <= 0;
 }
