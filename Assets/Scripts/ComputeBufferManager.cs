@@ -7,7 +7,7 @@ public class ComputeBufferManager : MonoBehaviour
     public static int NumLodMax = 10;
     public static int NumProteinMax = 100;
     public static int NumProteinAtomMax = 3000000;
-    public static int NumProteinAtomClusterMax = 100000;
+    public static int NumProteinAtomClusterMax = 300000;
     public static int NumProteinInstancesMax = 100000;
     public static int NumProteinSphereBatchesMax = 1000000;
 
@@ -75,6 +75,9 @@ public class ComputeBufferManager : MonoBehaviour
         }
     }
 
+    public ComputeBuffer ProteinDisplayPositions;
+    public ComputeBuffer ProteinDisplayRotations;
+
     // Hack to clear append buffer
     public static void ClearAppendBuffer(ComputeBuffer appendBuffer)
     {
@@ -126,6 +129,9 @@ public class ComputeBufferManager : MonoBehaviour
         if (ProteinInstancePositions == null) ProteinInstancePositions = new ComputeBuffer(NumProteinInstancesMax, 16);
         if (ProteinInstanceRotations == null) ProteinInstanceRotations = new ComputeBuffer(NumProteinInstancesMax, 16);
 
+        if (ProteinDisplayPositions == null) ProteinDisplayPositions = new ComputeBuffer(NumProteinInstancesMax, 16);
+        if (ProteinDisplayRotations == null) ProteinDisplayRotations = new ComputeBuffer(NumProteinInstancesMax, 16);
+
         //*****//
 
         if (CurveIngredientsInfos == null) CurveIngredientsInfos = new ComputeBuffer(NumCurveIngredientMax, 16);
@@ -164,6 +170,9 @@ public class ComputeBufferManager : MonoBehaviour
         if (ProteinInstanceCullFlags != null) { ProteinInstanceCullFlags.Release(); ProteinInstanceCullFlags = null; }
         if (ProteinInstancePositions != null) { ProteinInstancePositions.Release(); ProteinInstancePositions = null; }
         if (ProteinInstanceRotations != null) { ProteinInstanceRotations.Release(); ProteinInstanceRotations = null; }
+
+        if (ProteinDisplayPositions != null) { ProteinDisplayPositions.Release(); ProteinDisplayPositions = null; }
+        if (ProteinDisplayRotations != null) { ProteinDisplayRotations.Release(); ProteinDisplayRotations = null; }
 
         //*****//
 

@@ -42,8 +42,8 @@ void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 	bool crossSectionTest = _EnableCrossSection && SpherePlaneTest(_CrossSectionPlane, float4(sphere.xyz, 0));
 		
 	// if instance is culled return
-	if(_CullFlagFilter == -1 && cullFlag == 0) return;	
-	if(_CullFlagFilter != -1 && cullFlag != _CullFlagFilter) return;
+	//if(_CullFlagFilter == -1 && cullFlag == 0) return;	
+	//if(_CullFlagFilter != -1 && cullFlag != _CullFlagFilter) return;
 	if(frustrumTest || crossSectionTest || _ProteinVisibilityFlag[infos.x] == 0) return;
 				
 	int lodLevel = 0;		

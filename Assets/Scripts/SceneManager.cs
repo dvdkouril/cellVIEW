@@ -94,7 +94,21 @@ public class SceneManager : MonoBehaviour
     
     void Update()
     {
+        DoBrownianMotion();
+    }
 
+    void DoBrownianMotion()
+    {
+        ComputeShaderManager.Instance.BrownianMotionCS.SetInt("_Enable", Application.isPlaying ? Convert.ToInt32(PersistantSettings.Instance.EnableBrownianMotion) : 0);
+        ComputeShaderManager.Instance.BrownianMotionCS.SetFloat("_Time", Time.realtimeSinceStartup);
+        ComputeShaderManager.Instance.BrownianMotionCS.SetFloat("_SpeedFactor", PersistantSettings.Instance.SpeedFactor);
+        ComputeShaderManager.Instance.BrownianMotionCS.SetFloat("_MoveFactor", PersistantSettings.Instance.MoveFactor);
+        ComputeShaderManager.Instance.BrownianMotionCS.SetFloat("_RotateFactor", PersistantSettings.Instance.RotateFactor);
+        ComputeShaderManager.Instance.BrownianMotionCS.SetBuffer(0, "_ProteinInstancePositions", ComputeBufferManager.Instance.ProteinInstancePositions);
+        ComputeShaderManager.Instance.BrownianMotionCS.SetBuffer(0, "_ProteinInstanceRotations", ComputeBufferManager.Instance.ProteinInstanceRotations);
+        ComputeShaderManager.Instance.BrownianMotionCS.SetBuffer(0, "_ProteinInstanceDisplayPositions", ComputeBufferManager.Instance.ProteinDisplayPositions);
+        ComputeShaderManager.Instance.BrownianMotionCS.SetBuffer(0, "_ProteinInstanceDisplayRotations", ComputeBufferManager.Instance.ProteinDisplayRotations);
+        ComputeShaderManager.Instance.BrownianMotionCS.Dispatch(0, NumProteinInstances, 1, 1);
     }
 
     //--------------------------------------------------------------

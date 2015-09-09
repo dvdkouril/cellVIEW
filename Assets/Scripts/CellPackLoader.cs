@@ -172,7 +172,7 @@ public static class CellPackLoader
         // Define cluster decimation levels
         var clusterLevels = (containsACarbonOnly)
             ? new List<float>() {0.85f, 0.25f, 0.1f}
-            : new List<float>() {0.10f, 0.05f, 0.01f};
+            : new List<float>() { 0.2f, 0.1f, 0.05f};
         
         // Add ingredient type
         //SceneManager.Instance.AddIngredient(name, bounds, atomSpheres, color);

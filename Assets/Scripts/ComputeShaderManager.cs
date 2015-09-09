@@ -7,6 +7,7 @@ public class ComputeShaderManager : MonoBehaviour
     public ComputeShader KMeansCS;
     public ComputeShader ReadPixelCS;
     public ComputeShader SphereBatchCS;
+    public ComputeShader BrownianMotionCS;
     public ComputeShader OcclusionCullingCS;
 
     // Declare the shader manager as a singleton

@@ -23,6 +23,13 @@ public class PersistantSettings : MonoBehaviour
     public float CrossSectionPlaneDistance = 0;
     public Vector3 CrossSectionPlaneNormal;
 
+    // Brownian motion
+    public bool EnableBrownianMotion;
+    public float SpeedFactor = 0;
+    public float MoveFactor = 0;
+    public float RotateFactor = 0;
+
+
     // Lod infos
     public bool EnableLod;
     public float FirstLevelOffset = 0;
