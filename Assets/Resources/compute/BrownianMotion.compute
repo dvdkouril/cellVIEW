@@ -1,0 +1,79 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+
+uniform int _Enable;
+    uniform float _MoveFactor;
+    uniform float _RotateFactor;
+    uniform float _SpeedFactor;
+
+    uniform float _Time;
+    uniform StructuredBuffer<float4> _ProteinInstancePositions;
+    uniform StructuredBuffer<float4> _ProteinInstanceRotations;
+
+    uniform RWStructuredBuffer<float4> _ProteinInstanceDisplayPositions;
+    uniform RWStructuredBuffer<float4> _ProteinInstanceDisplayRotations;
+
+    float hash(float n)
+{
+    return frac(sin(n) * 43758.5453);
+    }
+
+    float noise_3D(float3 x)
+{
+    // The noise function returns a value in the range -1.0f -> 1.0f
+
+    float3 p = floor(x);
+    float3 f = frac(x);
+
+    f = f * f * (3.0 - 2.0 * f);
+    float n = p.x + p.y * 57.0 + 113.0 * p.z;
+
+    return lerp(lerp(lerp(hash(n + 0.0), hash(n + 1.0), f.x),
+    lerp(hash(n + 57.0), hash(n + 58.0), f.x), f.y),
+    lerp(lerp(hash(n + 113.0), hash(n + 114.0), f.x),
+    lerp(hash(n + 170.0), hash(n + 171.0), f.x), f.y), f.z);
+    }
+
+    [numthreads(1, 1, 1)]
+    void CSMain(uint3 id : SV_DispatchThreadID)
+    {
+        float4 pos = _ProteinInstancePositions[id.x];
+        float4 rot = _ProteinInstanceRotations[id.x];
+
+        if (_Enable)
+        {
+            float speedFactor = _SpeedFactor;
+            float translationScaleFactor = _MoveFactor;
+            float rotationScaleFactor = _RotateFactor;
+
+            float randx = frac(sin(dot(float2(id.x, pos.x), float2(12.9898, 78.233))) * 43758.5453);
+            float randy = frac(sin(dot(float2(id.x, pos.y), float2(12.9898, 78.233))) * 43758.5453);
+            float randz = frac(sin(dot(float2(id.x, pos.z), float2(12.9898, 78.233))) * 43758.5453);
+
+            float4 tt = float4(_Time / 20, _Time, _Time * 2, _Time * 3);
+
+            float3 pn;
+            pn.x = noise_3D(randx + 100 + pos.xyz + tt.xyz * speedFactor);
+            pn.y = noise_3D(randy + 200 + pos.yzx + tt.yzx * speedFactor);
+            pn.z = noise_3D(randz + 300 + pos.zxy + tt.zxy * speedFactor);
+            pn -= 0.5;
+
+            float4 rn;
+            rn.x = noise_3D(randx + 400 + pos.xzy + tt.xyz * speedFactor);
+            rn.y = noise_3D(randy + 500 + pos.yxz + tt.yzx * speedFactor);
+            rn.z = noise_3D(randz + 600 + pos.zyx + tt.zxy * speedFactor);
+            rn.w = noise_3D(randz + 700 + pos.xyx + tt.xyz * speedFactor);
+            rn -= 0.5;
+
+            _ProteinInstanceDisplayPositions[id.x] = float4(pos.xyz + pn * translationScaleFactor, pos.w);
+            _ProteinInstanceDisplayRotations[id.x] = normalize(rot + rn * rotationScaleFactor);
+        }
+        else
+        {
+            _ProteinInstanceDisplayPositions[id.x] = pos;
+            _ProteinInstanceDisplayRotations[id.x] = rot;
+        }
+    }
