@@ -19,7 +19,7 @@ public static class CellPackLoader
 	public static Dictionary<int,List<int>> usedColors;
 	public static UImanager UI_manager;
 
-    public static void LoadCellPackResults()
+    public static void LoadCellPackResults(bool load=true)
     {
            //#if UNITY_EDITOR
 			Debug.Log("Loading");
@@ -50,26 +50,34 @@ public static class CellPackLoader
 
 			//change cursor to loading
 
-            LoadIngredients(path);
+            if (load) {
+			LoadIngredients (path);
 			//restore cursor
 
-            Debug.Log("*****");
-            Debug.Log("Total protein atoms number: " + SceneManager.Instance.TotalNumProteinAtoms);
+			Debug.Log ("*****");
+			Debug.Log ("Total protein atoms number: " + SceneManager.Instance.TotalNumProteinAtoms);
 
-            // Upload scene data to the GPU
-            SceneManager.Instance.UploadAllData();
-
-            //
-            SceneManager.Instance.SetCutObjects();//set everything
-			// set up the treeView
+			// Upload scene data to the GPU
+			SceneManager.Instance.UploadAllData ();
+			SceneManager.Instance.SetCutObjects ();//set everything
+			} else {
+				var cellPackSceneJsonPath = path;//Application.dataPath + "/../Data/HIV/cellPACK/BloodHIV1.0_mixed_fixed_nc1.json";
+				if (!File.Exists(cellPackSceneJsonPath)) throw new Exception("No file found at: " + cellPackSceneJsonPath);
+				//this assume a result file from cellpack, not a recipe file.
+				resultData = Helper.ParseJson(cellPackSceneJsonPath);
+			}
+			
 			#if UNITY_EDITOR
 			if (UI_manager.recipe_ingredient_ui!= null){
-				UI_manager.recipe_ingredient_ui.populateRecipe (resultData);
+				UI_manager.recipe_ingredient_ui.populateRecipeJson (resultData);
 			}
 			#endif
+			PersistantSettings.Instance.storeHierachy (resultData);
    }
 
     
+
+
 
     public static void LoadIngredients(string recipePath)
     {

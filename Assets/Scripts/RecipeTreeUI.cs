@@ -152,7 +152,7 @@ public class RecipeTreeUI : MonoBehaviour {
 
 	//calculate MaxSize Width ?
 	//CalcSize(GUIContent(label));
-	public void addIngredientsItem(JSONNode recipeData,TreeViewItem parent){
+	public void addIngredientsItemJson(JSONNode recipeData,TreeViewItem parent){
 		for (int j = 0; j < recipeData["ingredients"].Count; j++)
 		{
 			TreeViewItem jitem =  parent.AddItem(recipeData["ingredients"][j]["name"],true,true);
@@ -194,7 +194,7 @@ public class RecipeTreeUI : MonoBehaviour {
 		return itemfound;
 	}
 
-	public void populateRecipe(JSONNode recipeData){
+	public void populateRecipeJson(JSONNode recipeData){
 		ClearTree ();
 		anid = 0;
 		var item = m_myTreeView;
@@ -206,7 +206,7 @@ public class RecipeTreeUI : MonoBehaviour {
 		if (recipeData ["cytoplasme"] != null) {
 			TreeViewItem item1 = item.RootItem.AddItem("cytoplasme",true,true);
 			AddEvents(item1);
-			addIngredientsItem(recipeData["cytoplasme"],item1);
+			addIngredientsItemJson(recipeData["cytoplasme"],item1);
 		}
 		for (int i = 0; i < recipeData["compartments"].Count; i++)
 		{
@@ -215,13 +215,61 @@ public class RecipeTreeUI : MonoBehaviour {
 			if (recipeData["compartments"][i] ["interior"] != null) {
 				TreeViewItem interior = comp.AddItem("interior"+ i.ToString(),true,true);
 				AddEvents(interior);
-				addIngredientsItem(recipeData["compartments"][i] ["interior"],interior);
+				addIngredientsItemJson(recipeData["compartments"][i] ["interior"],interior);
 			}
 			if (recipeData["compartments"][i] ["surface"] != null) {
 				TreeViewItem surface = comp.AddItem("surface"+ i.ToString(),true,true);
 				AddEvents(surface);
-				addIngredientsItem(recipeData["compartments"][i] ["surface"],surface);
+				addIngredientsItemJson(recipeData["compartments"][i] ["surface"],surface);
 			}
+		}
+	}
+	public void addIngredientsItem(PersistantSettings.cpNode recipeData,TreeViewItem parent){
+		for (int j = 0; j < recipeData.Children.Count; j++)
+		{
+			TreeViewItem jitem =  parent.AddItem(recipeData.Children[j].Name,true,true);
+			AddEvents(jitem);
+			jitem.anid=anid;
+			anid+=1;
+		}
+	}
+
+	public void populateRecipe(PersistantSettings.cpNode hierachy){
+		ClearTree ();
+		anid = 0;
+		var item = m_myTreeView;
+		item.Width = 250;
+		item.Height = 500;
+		Debug.Log (hierachy.Name);
+		item.Header = hierachy.Name;
+		AddEvents(item.RootItem);
+		//int anid = 0;
+		int i = 0;
+		foreach (PersistantSettings.cpNode child in hierachy.Children) {
+			if (string.Equals(child.Name,"cytoplasme")){
+				TreeViewItem item1 = item.RootItem.AddItem("cytoplasme",true,true);
+				AddEvents(item1);
+				addIngredientsItem(child,item1);
+			}
+			else {
+				//should have two child
+				TreeViewItem comp = item.RootItem.AddItem(child.Name,true,true);
+				AddEvents(comp);
+				if (child.Children.Count != 0){
+					if (child.Children[0].Children.Count != 0) {
+						TreeViewItem interior = comp.AddItem("interior"+ i.ToString(),true,true);
+						AddEvents(interior);
+						addIngredientsItem(child.Children[0],interior);
+					}
+					if (child.Children[1].Children.Count != 0) {
+						TreeViewItem surface = comp.AddItem("surface"+ i.ToString(),true,true);
+						AddEvents(surface);
+						addIngredientsItem(child.Children[1],surface);
+					}
+				}
+				i+=1;
+			}
+		
 		}
 	}
 }

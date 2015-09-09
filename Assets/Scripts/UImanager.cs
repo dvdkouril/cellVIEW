@@ -182,7 +182,7 @@ public class UImanager : MonoBehaviour {
 			//this is going to adapt the treeView
 			//populate the treeView if any
 			if (recipe_ingredient_ui!= null){
-				recipe_ingredient_ui.populateRecipe (CellPackLoader.resultData);
+				recipe_ingredient_ui.populateRecipeJson (CellPackLoader.resultData);
 			}
 			//Cursor.SetCursor(null,Vector2.zero,CursorMode.Auto);
 			//resetProgressBar();
@@ -203,26 +203,15 @@ public class UImanager : MonoBehaviour {
 		}
 		if (buttonName == "start") {
 			//load HIV+Blood
-			//start asynchronous progressBar?
-			SceneManager.Instance.ClearScene();
+			//SceneManager.Instance.ClearScene();
 			SceneManager.Instance.AllRecipes = AllRecipes;
 			SceneManager.Instance.sceneid = 3;//hiv+blood
 			//Debug.Log(SceneManager.Instance.sceneid.ToString());
 			CellPackLoader.UI_manager = this;
-			CellPackLoader.LoadCellPackResults();
-			/*
-			 * Thread thread = new Thread();
-			thread.Start();
-			while (!thread.IsAlive);
-			while (thread.IsAlive){
-				Debug.Log ("doing something here");
-			}
-			thread.Join();
-			Debug.Log ("OK");
-			*/
-			//CellPackLoader.LoadCellPackResults();
+			CellPackLoader.LoadCellPackResults(false);
 			if (recipe_ingredient_ui!= null){
-				recipe_ingredient_ui.populateRecipe (CellPackLoader.resultData);
+				recipe_ingredient_ui.populateRecipeJson (CellPackLoader.resultData);
+				//recipe_ingredient_ui.populateRecipe (PersistantSettings.Instance.hierarchy);
 			}
 		}
 		if (buttonName == "unselect") {
