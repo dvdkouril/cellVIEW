@@ -100,7 +100,7 @@ public class NavigateCamera : MonoBehaviour
     }
 
 	public void CenterView (){
-		Distance = 400.0f;
+		Distance = 320.0f;
 		TargetPosition = Vector3.zero;
 		transform.position = TargetPosition - transform.forward * Distance;
 	}
@@ -183,7 +183,7 @@ public class NavigateCamera : MonoBehaviour
 						_selectedTransformHandle.transform.localScale = Vector3.one*10;
 				}
 				else {
-                	Distance = 350.0f;
+                	Distance = 320.0f;
                 	TargetPosition = Vector3.zero;
                 	transform.position = TargetPosition - transform.forward * Distance;
 				}
