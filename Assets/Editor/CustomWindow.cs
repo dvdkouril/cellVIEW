@@ -205,7 +205,16 @@ public class CustomWindow : EditorWindow
                     //EditorGUI.indentLevel--;
                     //EditorGUILayout.Space();
 
-                    PersistantSettings.Instance.EnableCrossSection = EditorGUILayout.BeginToggleGroup("Cross Section", PersistantSettings.Instance.EnableCrossSection);
+					PersistantSettings.Instance.EnableBrownianMotion = EditorGUILayout.BeginToggleGroup("Brownian Motion", PersistantSettings.Instance.EnableBrownianMotion);
+					EditorGUI.indentLevel++;
+					PersistantSettings.Instance.SpeedFactor = EditorGUILayout.FloatField("Speed Factor", PersistantSettings.Instance.SpeedFactor);
+					PersistantSettings.Instance.MoveFactor = EditorGUILayout.FloatField("Move Factor", PersistantSettings.Instance.MoveFactor);
+					PersistantSettings.Instance.RotateFactor = EditorGUILayout.FloatField("Rotate Factor", PersistantSettings.Instance.RotateFactor);
+					EditorGUI.indentLevel--;
+					EditorGUILayout.EndToggleGroup();
+					EditorGUILayout.Space();
+
+					PersistantSettings.Instance.EnableCrossSection = EditorGUILayout.BeginToggleGroup("Cross Section", PersistantSettings.Instance.EnableCrossSection);
                     EditorGUI.indentLevel++;
                     PersistantSettings.Instance.CrossSectionPlaneNormal = EditorGUILayout.Vector3Field("Plane Normal", PersistantSettings.Instance.CrossSectionPlaneNormal).normalized;
                     PersistantSettings.Instance.CrossSectionPlaneDistance = EditorGUILayout.FloatField("Plane Distance", PersistantSettings.Instance.CrossSectionPlaneDistance);

@@ -10,13 +10,14 @@ public class ComputeBufferManager : MonoBehaviour
     public static int NumLodMax = 10;
     public static int NumProteinMax = 1000;
     public static int NumProteinAtomMax = 3000000;
-    public static int NumProteinAtomClusterMax = 100000;
+    public static int NumProteinAtomClusterMax = 300000;
     public static int NumProteinInstancesMax = 2000000;
     public static int NumProteinSphereBatchesMax = 1000000;
 
     public static int NumCurveIngredientMax = 10;
     public static int NumCurveIngredientAtomsMax = 1000;
     public static int NumCurveControlPointsMax = 1000000;
+
 
     public ComputeBuffer LodInfos;
     public ComputeBuffer SphereBatchBuffer;
@@ -38,6 +39,8 @@ public class ComputeBufferManager : MonoBehaviour
     public ComputeBuffer ProteinInstanceCullFlags;
     public ComputeBuffer ProteinInstancePositions;
     public ComputeBuffer ProteinInstanceRotations;
+	public ComputeBuffer ProteinDisplayPositions;
+	public ComputeBuffer ProteinDisplayRotations;
 
     // Curve ingredients buffers
     public ComputeBuffer CurveIngredientsInfos;
@@ -136,6 +139,8 @@ public class ComputeBufferManager : MonoBehaviour
         if (ProteinInstanceCullFlags == null) ProteinInstanceCullFlags = new ComputeBuffer(NumProteinInstancesMax, 4);
         if (ProteinInstancePositions == null) ProteinInstancePositions = new ComputeBuffer(NumProteinInstancesMax, 16);
         if (ProteinInstanceRotations == null) ProteinInstanceRotations = new ComputeBuffer(NumProteinInstancesMax, 16);
+		if (ProteinDisplayPositions == null) ProteinDisplayPositions = new ComputeBuffer(NumProteinInstancesMax, 16);
+		if (ProteinDisplayRotations == null) ProteinDisplayRotations = new ComputeBuffer(NumProteinInstancesMax, 16);
 
         //*****//
 
@@ -193,6 +198,8 @@ public class ComputeBufferManager : MonoBehaviour
         if (ProteinInstanceCullFlags != null) { ProteinInstanceCullFlags.Release(); ProteinInstanceCullFlags = null; }
         if (ProteinInstancePositions != null) { ProteinInstancePositions.Release(); ProteinInstancePositions = null; }
         if (ProteinInstanceRotations != null) { ProteinInstanceRotations.Release(); ProteinInstanceRotations = null; }
+		if (ProteinDisplayPositions != null) { ProteinDisplayPositions.Release(); ProteinDisplayPositions = null; }
+		if (ProteinDisplayRotations != null) { ProteinDisplayRotations.Release(); ProteinDisplayRotations = null; }
 
         //*****//
 

@@ -61,7 +61,7 @@ public class NavigateCamera : MonoBehaviour
     {
         deltaTime = Time.realtimeSinceStartup - lastUpdateTime;
         lastUpdateTime = Time.realtimeSinceStartup;
-		float smoothTime = 0.3f; 
+		float smoothTime = 1.0f; 
 		if (DampTargetPosition != Vector3.zero) {
 			//TargetPosition=DampTargetPosition;
 			transform.position = Vector3.SmoothDamp(transform.position,DampTargetPosition,ref velocity,smoothTime);
@@ -152,6 +152,11 @@ public class NavigateCamera : MonoBehaviour
 				TargetPosition = transform.position + transform.forward * DefaultDistance;
 				Distance = Vector3.Distance (TargetPosition, transform.position);
 			}
+			var d = Input.GetAxis("Mouse ScrollWheel");
+			if (d < 0) {
+				//zooming out
+				SceneManager.Instance.SetSelectedElement(-1);
+			}
 		}
         if (Event.current.type == EventType.KeyDown)
         {
@@ -166,10 +171,11 @@ public class NavigateCamera : MonoBehaviour
 						_selectedTransformHandle.transform.localScale = Vector3.one*10;
 				}
 				else {
-                	Distance = 400.0f;
+                	Distance = 350.0f;
                 	TargetPosition = Vector3.zero;
                 	transform.position = TargetPosition - transform.forward * Distance;
 				}
+				SceneManager.Instance.SetSelectedElement(-1);//unselect everything ?
 			}
             //if (Event.current.keyCode == KeyCode.F)
             //{

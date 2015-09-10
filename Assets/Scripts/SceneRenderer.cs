@@ -141,8 +141,10 @@ public class SceneRenderer : MonoBehaviour
         _renderProteinsMaterial.SetBuffer("_ProteinInstanceInfo", ComputeBufferManager.Instance.ProteinInstanceInfos);
         _renderProteinsMaterial.SetBuffer("_ProteinInstancePositions", ComputeBufferManager.Instance.ProteinInstancePositions);
         _renderProteinsMaterial.SetBuffer("_ProteinInstanceRotations", ComputeBufferManager.Instance.ProteinInstanceRotations);
+		_renderProteinsMaterial.SetBuffer("_ProteinInstancePositions", ComputeBufferManager.Instance.ProteinDisplayPositions);
+		_renderProteinsMaterial.SetBuffer("_ProteinInstanceRotations", ComputeBufferManager.Instance.ProteinDisplayRotations);
 
-        _renderProteinsMaterial.SetBuffer("_ProteinColors", ComputeBufferManager.Instance.ProteinColors);
+		_renderProteinsMaterial.SetBuffer("_ProteinColors", ComputeBufferManager.Instance.ProteinColors);
         _renderProteinsMaterial.SetBuffer("_ProteinAtomPositions", ComputeBufferManager.Instance.ProteinAtoms);
         _renderProteinsMaterial.SetBuffer("_ProteinClusterPositions", ComputeBufferManager.Instance.ProteinAtomClusters);
         _renderProteinsMaterial.SetBuffer("_ProteinSphereBatchInfos", ComputeBufferManager.Instance.SphereBatchBuffer);
@@ -187,80 +189,139 @@ public class SceneRenderer : MonoBehaviour
     //    RopeConstraintsCS.Dispatch(1, (int)Mathf.Ceil(numSegmentPairs2 / 16.0f), 1, 1);
     //}
 
-    void ComputeHiZMap(RenderTexture depthBuffer)
-    {
-        // Hierachical depth buffer
-        if (_HiZMap == null || _HiZMap.width != Screen.width || _HiZMap.height != Screen.height)
-        {
-            if (_HiZMap != null)
-            {
-                _HiZMap.Release();
-                DestroyImmediate(_HiZMap);
-                _HiZMap = null;
-            }
+	void ComputeHiZMap(RenderTexture depthBuffer)
+	{
+		// Hierachical depth buffer
+		if (_HiZMap == null || _HiZMap.width != Screen.width || _HiZMap.height != Screen.height)
+		{
+			if (_HiZMap != null)
+			{
+				_HiZMap.Release();
+				DestroyImmediate(_HiZMap);
+				_HiZMap = null;
+			}
+			
+			_HiZMap = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RFloat);
+			_HiZMap.enableRandomWrite = true;
+			_HiZMap.useMipMap = false;
+			_HiZMap.isVolume = true;
+			_HiZMap.volumeDepth = 24;
+			//_HiZMap.filterMode = FilterMode.Point;
+			_HiZMap.wrapMode = TextureWrapMode.Clamp;
+			_HiZMap.hideFlags = HideFlags.HideAndDontSave;
+			_HiZMap.Create();
+		}
+		
+		ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_ScreenWidth", Screen.width);
+		ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_ScreenHeight", Screen.height);
+		
+		ComputeShaderManager.Instance.OcclusionCullingCS.SetTexture(0, "_RWHiZMap", _HiZMap);
+		ComputeShaderManager.Instance.OcclusionCullingCS.SetTexture(0, "_DepthBuffer", depthBuffer);
+		ComputeShaderManager.Instance.OcclusionCullingCS.Dispatch(0, (int)Mathf.Ceil(Screen.width / 8.0f), (int)Mathf.Ceil(Screen.height / 8.0f), 1);
+		
+		ComputeShaderManager.Instance.OcclusionCullingCS.SetTexture(1, "_RWHiZMap", _HiZMap);
+		for (int i = 1; i < 12; i++)
+		{
+			ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_CurrentLevel", i);
+			ComputeShaderManager.Instance.OcclusionCullingCS.Dispatch(1, (int)Mathf.Ceil(Screen.width / 8.0f), (int)Mathf.Ceil(Screen.height / 8.0f), 1);
+		}
+	}
+	//void ComputeHiZMap(RenderTexture depthBuffer)
+	//{
+	//    // Hierachical depth buffer
+	//    if (_HiZMap == null || _HiZMap.width != Screen.width || _HiZMap.height != Screen.height)
+	//    {
+	//        if (_HiZMap != null)
+	//        {
+	//            _HiZMap.Release();
+	//            DestroyImmediate(_HiZMap);
+	//            _HiZMap = null;
+	//        }
+	
+	//        _HiZMap = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RFloat);
+	//        _HiZMap.enableRandomWrite = true;
+	//        _HiZMap.useMipMap = false;
+	//        _HiZMap.isVolume = true;
+	//        _HiZMap.volumeDepth = 24;
+	//        //_HiZMap.filterMode = FilterMode.Point;
+	//        _HiZMap.wrapMode = TextureWrapMode.Clamp;
+	//        _HiZMap.hideFlags = HideFlags.HideAndDontSave;
+	//        _HiZMap.Create();
+	//    }
+	
+	//    ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_ScreenWidth", Screen.width);
+	//    ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_ScreenHeight", Screen.height);
+	
+	//    ComputeShaderManager.Instance.OcclusionCullingCS.SetTexture(0, "_RWHiZMap", _HiZMap);
+	//    ComputeShaderManager.Instance.OcclusionCullingCS.SetTexture(0, "_DepthBuffer", depthBuffer);
+	//    ComputeShaderManager.Instance.OcclusionCullingCS.Dispatch(0, (int)Mathf.Ceil(Screen.width / 8.0f), (int)Mathf.Ceil(Screen.height / 8.0f), 1);
+	
+	//    ComputeShaderManager.Instance.OcclusionCullingCS.SetTexture(1, "_RWHiZMap", _HiZMap);
+	//    for (int i = 1; i < 12; i++)
+	//    {
+	//        ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_CurrentLevel", i);
+	//        ComputeShaderManager.Instance.OcclusionCullingCS.Dispatch(1, (int)Mathf.Ceil(Screen.width / 8.0f), (int)Mathf.Ceil(Screen.height / 8.0f), 1);
+	//    }
+	//}
+	
+	void ComputeOcclusionCulling(int cullFlag)
+	{
+		if (_HiZMap == null || PersistantSettings.Instance.DebugObjectCulling) return;
+		//void ComputeOcclusionCulling(int cullFlag)
+		//{
+		//    if (_HiZMap == null || PersistantSettings.Instance.DebugObjectCulling) return;
+		
+		ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_CullFlag", cullFlag);
+		ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_ScreenWidth", Screen.width);
+		ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_ScreenHeight", Screen.height);
+		ComputeShaderManager.Instance.OcclusionCullingCS.SetFloat("_Scale", PersistantSettings.Instance.Scale);
+		//    ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_CullFlag", cullFlag);
+		//    ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_ScreenWidth", Screen.width);
+		//    ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_ScreenHeight", Screen.height);
+		//    ComputeShaderManager.Instance.OcclusionCullingCS.SetFloat("_Scale", PersistantSettings.Instance.Scale);
+		
+		ComputeShaderManager.Instance.OcclusionCullingCS.SetFloats("_FrustrumPlanes", Helper.FrustrumPlanesAsFloats(_camera));
+		ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_EnableCrossSection", Convert.ToInt32(PersistantSettings.Instance.EnableCrossSection));
+		ComputeShaderManager.Instance.OcclusionCullingCS.SetVector("_CrossSectionPlane", new Vector4(PersistantSettings.Instance.CrossSectionPlaneNormal.x, PersistantSettings.Instance.CrossSectionPlaneNormal.y, PersistantSettings.Instance.CrossSectionPlaneNormal.z, PersistantSettings.Instance.CrossSectionPlaneDistance));
+		//    ComputeShaderManager.Instance.OcclusionCullingCS.SetFloats("_FrustrumPlanes", Helper.FrustrumPlanesAsFloats(_camera));
+		//    ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_EnableCrossSection", Convert.ToInt32(PersistantSettings.Instance.EnableCrossSection));
+		//    ComputeShaderManager.Instance.OcclusionCullingCS.SetVector("_CrossSectionPlane", new Vector4(PersistantSettings.Instance.CrossSectionPlaneNormal.x, PersistantSettings.Instance.CrossSectionPlaneNormal.y, PersistantSettings.Instance.CrossSectionPlaneNormal.z, PersistantSettings.Instance.CrossSectionPlaneDistance));
+		
+		ComputeShaderManager.Instance.OcclusionCullingCS.SetFloats("_CameraViewMatrix", Helper.Matrix4X4ToFloatArray(_camera.worldToCameraMatrix));
+		ComputeShaderManager.Instance.OcclusionCullingCS.SetFloats("_CameraProjMatrix", Helper.Matrix4X4ToFloatArray(GL.GetGPUProjectionMatrix(_camera.projectionMatrix, false)));
+		//    ComputeShaderManager.Instance.OcclusionCullingCS.SetFloats("_CameraViewMatrix", Helper.Matrix4X4ToFloatArray(_camera.worldToCameraMatrix));
+		//    ComputeShaderManager.Instance.OcclusionCullingCS.SetFloats("_CameraProjMatrix", Helper.Matrix4X4ToFloatArray(GL.GetGPUProjectionMatrix(_camera.projectionMatrix, false)));
+		
+		ComputeShaderManager.Instance.OcclusionCullingCS.SetTexture(2, "_HiZMap", _HiZMap);
+		//    ComputeShaderManager.Instance.OcclusionCullingCS.SetTexture(2, "_HiZMap", _HiZMap);
+		
+		if (SceneManager.Instance.NumProteinInstances > 0)
+		{
+			ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_NumInstances", SceneManager.Instance.NumProteinInstances);
+			ComputeShaderManager.Instance.OcclusionCullingCS.SetBuffer(2, "_InstanceCullFlags", ComputeBufferManager.Instance.ProteinInstanceCullFlags);
+			ComputeShaderManager.Instance.OcclusionCullingCS.SetBuffer(2, "_InstancePositions", ComputeBufferManager.Instance.ProteinInstancePositions);
+			ComputeShaderManager.Instance.OcclusionCullingCS.Dispatch(2, SceneManager.Instance.NumProteinInstances, 1, 1);
+		}
+	}
+	//    if (SceneManager.Instance.NumProteinInstances > 0)
+	//    {
+	//        ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_NumInstances", SceneManager.Instance.NumProteinInstances);
+	//        ComputeShaderManager.Instance.OcclusionCullingCS.SetBuffer(2, "_InstanceCullFlags", ComputeBufferManager.Instance.ProteinInstanceCullFlags);
+	//        ComputeShaderManager.Instance.OcclusionCullingCS.SetBuffer(2, "_InstancePositions", ComputeBufferManager.Instance.ProteinInstancePositions);
+	//        ComputeShaderManager.Instance.OcclusionCullingCS.Dispatch(2, SceneManager.Instance.NumProteinInstances, 1, 1);
+	//    }
+	//}
 
-            _HiZMap = new RenderTexture(Screen.width, Screen.height, 0, RenderTextureFormat.RFloat);
-            _HiZMap.enableRandomWrite = true;
-            _HiZMap.useMipMap = false;
-            _HiZMap.isVolume = true;
-            _HiZMap.volumeDepth = 24;
-            //_HiZMap.filterMode = FilterMode.Point;
-            _HiZMap.wrapMode = TextureWrapMode.Clamp;
-            _HiZMap.hideFlags = HideFlags.HideAndDontSave;
-            _HiZMap.Create();
-        }
-
-        ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_ScreenWidth", Screen.width);
-        ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_ScreenHeight", Screen.height);
-
-        ComputeShaderManager.Instance.OcclusionCullingCS.SetTexture(0, "_RWHiZMap", _HiZMap);
-        ComputeShaderManager.Instance.OcclusionCullingCS.SetTexture(0, "_DepthBuffer", depthBuffer);
-        ComputeShaderManager.Instance.OcclusionCullingCS.Dispatch(0, (int)Mathf.Ceil(Screen.width / 8.0f), (int)Mathf.Ceil(Screen.height / 8.0f), 1);
-
-        ComputeShaderManager.Instance.OcclusionCullingCS.SetTexture(1, "_RWHiZMap", _HiZMap);
-        for (int i = 1; i < 12; i++)
-        {
-            ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_CurrentLevel", i);
-            ComputeShaderManager.Instance.OcclusionCullingCS.Dispatch(1, (int)Mathf.Ceil(Screen.width / 8.0f), (int)Mathf.Ceil(Screen.height / 8.0f), 1);
-        }
-    }
-    
-    void ComputeOcclusionCulling(int cullFlag)
-    {
-        if (_HiZMap == null || PersistantSettings.Instance.DebugObjectCulling) return;
-
-        ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_CullFlag", cullFlag);
-        ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_ScreenWidth", Screen.width);
-        ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_ScreenHeight", Screen.height);
-        ComputeShaderManager.Instance.OcclusionCullingCS.SetFloat("_Scale", PersistantSettings.Instance.Scale);
-
-        ComputeShaderManager.Instance.OcclusionCullingCS.SetFloats("_FrustrumPlanes", Helper.FrustrumPlanesAsFloats(_camera));
-        ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_EnableCrossSection", Convert.ToInt32(PersistantSettings.Instance.EnableCrossSection));
-        ComputeShaderManager.Instance.OcclusionCullingCS.SetVector("_CrossSectionPlane", new Vector4(PersistantSettings.Instance.CrossSectionPlaneNormal.x, PersistantSettings.Instance.CrossSectionPlaneNormal.y, PersistantSettings.Instance.CrossSectionPlaneNormal.z, PersistantSettings.Instance.CrossSectionPlaneDistance));
-
-        ComputeShaderManager.Instance.OcclusionCullingCS.SetFloats("_CameraViewMatrix", Helper.Matrix4X4ToFloatArray(_camera.worldToCameraMatrix));
-        ComputeShaderManager.Instance.OcclusionCullingCS.SetFloats("_CameraProjMatrix", Helper.Matrix4X4ToFloatArray(GL.GetGPUProjectionMatrix(_camera.projectionMatrix, false)));
-
-        ComputeShaderManager.Instance.OcclusionCullingCS.SetTexture(2, "_HiZMap", _HiZMap);
-
-        if (SceneManager.Instance.NumProteinInstances > 0)
-        {
-            ComputeShaderManager.Instance.OcclusionCullingCS.SetInt("_NumInstances", SceneManager.Instance.NumProteinInstances);
-            ComputeShaderManager.Instance.OcclusionCullingCS.SetBuffer(2, "_InstanceCullFlags", ComputeBufferManager.Instance.ProteinInstanceCullFlags);
-            ComputeShaderManager.Instance.OcclusionCullingCS.SetBuffer(2, "_InstancePositions", ComputeBufferManager.Instance.ProteinInstancePositions);
-            ComputeShaderManager.Instance.OcclusionCullingCS.Dispatch(2, SceneManager.Instance.NumProteinInstances, 1, 1);
-        }
-    }
-
-    void ProteinFillBatchBuffer(int cullFlagFilter)
-    {
-        if (SceneManager.Instance.NumProteinInstances <= 0) return;
-
-        // Do sphere batching
-        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_CullFlagFilter", cullFlagFilter);
-        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_NumLevels", SceneManager.Instance.NumLodLevels);
-        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_NumInstances", SceneManager.Instance.NumProteinInstances);
-        ComputeShaderManager.Instance.SphereBatchCS.SetInt("_EnableLod", Convert.ToInt32(PersistantSettings.Instance.EnableLod));
+	
+	void ProteinFillBatchBuffer(int cullFlagFilter)
+	{
+		if (SceneManager.Instance.NumProteinInstances <= 0) return;
+		
+		// Do sphere batching
+		ComputeShaderManager.Instance.SphereBatchCS.SetInt("_CullFlagFilter", cullFlagFilter);
+		ComputeShaderManager.Instance.SphereBatchCS.SetInt("_NumLevels", SceneManager.Instance.NumLodLevels);
+		ComputeShaderManager.Instance.SphereBatchCS.SetInt("_NumInstances", SceneManager.Instance.NumProteinInstances);
+		ComputeShaderManager.Instance.SphereBatchCS.SetInt("_EnableLod", Convert.ToInt32(PersistantSettings.Instance.EnableLod));
         ComputeShaderManager.Instance.SphereBatchCS.SetFloat("_Scale", PersistantSettings.Instance.Scale);
         ComputeShaderManager.Instance.SphereBatchCS.SetVector("_CameraForward", _camera.transform.forward);
         ComputeShaderManager.Instance.SphereBatchCS.SetVector("_CameraPosition", _camera.transform.position);
@@ -352,21 +413,21 @@ public class SceneRenderer : MonoBehaviour
             ClearBatchBuffer();
         }
 
-        ComputeHiZMap(depthBuffer);
-        ComputeOcclusionCulling(frameCount);
+		//ComputeHiZMap(depthBuffer);
+		//ComputeOcclusionCulling(frameCount);
+		
+		//if (SceneManager.Instance.NumProteinInstances > 0)
+		//{
+		//    ProteinFillBatchBuffer(Time.frameCount);
+		//    //Debug.Log(GetBatchCount());
+		//    Graphics.SetRenderTarget(idBuffer.colorBuffer, depthBuffer.depthBuffer);
+		//    _renderProteinsMaterial.SetPass(0);
+		//    Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
+		//    ClearBatchBuffer();
+		//}
 
-        if (SceneManager.Instance.NumProteinInstances > 0)
-        {
-            ProteinFillBatchBuffer(Time.frameCount);
-            //Debug.Log(GetBatchCount());
-            Graphics.SetRenderTarget(idBuffer.colorBuffer, depthBuffer.depthBuffer);
-            _renderProteinsMaterial.SetPass(0);
-            Graphics.DrawProceduralIndirect(MeshTopology.Points, _argBuffer);
-            ClearBatchBuffer();
-        }
-
-        // Draw curve ingredients
-        if (SceneManager.Instance.NumDnaSegments > 0)
+		// Draw curve ingredients
+		if (SceneManager.Instance.NumDnaSegments > 0)
         {
             SetCurveShaderParams();
             Graphics.SetRenderTarget(new[] { colorBuffer.colorBuffer, idBuffer.colorBuffer }, depthBuffer.depthBuffer);

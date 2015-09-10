@@ -46,7 +46,11 @@ public class HandleSelection : MonoBehaviour {
 		if ((description == null) || (string.Equals (description, ""))) {
 			description = new_iname;
 		}
+		RectTransform labelrec =  TextUI.GetComponentInChildren<Text>().gameObject.GetComponent<RectTransform>();
 		TextUI.GetComponentInChildren<Text>().text = description;
+		//update the parent width 
+		RectTransform rec = TextUI.GetComponent<RectTransform> ();
+		//rec.sizeDelta = labelrec.sizeDelta;
 	}
 
 	void Update () {

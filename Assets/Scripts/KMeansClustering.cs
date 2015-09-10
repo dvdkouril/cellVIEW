@@ -36,7 +36,7 @@ public class KMeansClustering
         ComputeShaderManager.Instance.KMeansCS.SetInt("_NumPoints", atoms.Count);
         ComputeShaderManager.Instance.KMeansCS.SetInt("_NumCentroids", numCentroids);
 
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 10; i++)
         {
             ComputeShaderManager.Instance.KMeansCS.SetBuffer(0, "_PointBuffer", pointBuffer);
             ComputeShaderManager.Instance.KMeansCS.SetBuffer(0, "_CentroidBuffer", centroidBuffer);

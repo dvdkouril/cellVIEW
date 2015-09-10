@@ -131,8 +131,16 @@
 						color = highlight;
 					}
 					else if (proteinInfo.y == 3) {
+						float f = 0.2;
+						float r = proteinColor.r;
+						float g = proteinColor.g;
+						float b = proteinColor.b;
+						//float3 lum = float3(r*0.22,g*0.707,b*0.071);//0.3,0.6,0.1?
 						float lum = dot( proteinColor.rgb, float3(0.22, 0.707, 0.071));
-						color = float4(lum,lum,lum,1);
+						color = proteinColor*f+float4(lum,lum,lum,1);
+						//float lum = dot( proteinColor.rgb, float3(0.1, 0.5, 0.07));//
+						//float lum = dot( proteinColor.rgb, float3(0.22, 0.707, 0.071));//0.3,0.6,0.1?
+						//color = float4(lum,lum,lum,1);
 					}
 					else {
 						color  =float4(ColorCorrection(proteinColor.xyz), 1);

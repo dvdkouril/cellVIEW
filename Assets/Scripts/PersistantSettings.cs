@@ -40,6 +40,12 @@ public class PersistantSettings : MonoBehaviour
 
 	public cpNode hierarchy;
 
+	// Brownian motion
+	public bool EnableBrownianMotion;
+	public float SpeedFactor = 0;
+	public float MoveFactor = 0;
+	public float RotateFactor = 0;
+
 	// Declare the DisplaySettings as a singleton
     private static PersistantSettings _instance = null;
     public static PersistantSettings Instance

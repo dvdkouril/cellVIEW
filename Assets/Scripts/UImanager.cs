@@ -31,6 +31,10 @@ public class UImanager : MonoBehaviour {
 	public GameObject progressBar;
 	public RectTransform treeviewHolder;
 
+	public SSAOPro ssao1;
+	public SSAOPro ssao2;
+
+	private bool started = false;
 	private RectTransform panel;
 	private string[] recipe_liste;
 	private GameObject camerafx_panel;
@@ -205,7 +209,7 @@ public class UImanager : MonoBehaviour {
 			//load HIV+Blood
 			//SceneManager.Instance.ClearScene();
 			SceneManager.Instance.AllRecipes = AllRecipes;
-			SceneManager.Instance.sceneid = 3;//hiv+blood
+			//SceneManager.Instance.sceneid = 3;//hiv+blood
 			//Debug.Log(SceneManager.Instance.sceneid.ToString());
 			CellPackLoader.UI_manager = this;
 			CellPackLoader.LoadCellPackResults(false);
@@ -213,6 +217,7 @@ public class UImanager : MonoBehaviour {
 				recipe_ingredient_ui.populateRecipeJson (CellPackLoader.resultData);
 				//recipe_ingredient_ui.populateRecipe (PersistantSettings.Instance.hierarchy);
 			}
+			started = true;
 		}
 		if (buttonName == "unselect") {
 			if (Camera.main.GetComponent<NavigateCamera>().handleMode){
@@ -321,7 +326,12 @@ public class UImanager : MonoBehaviour {
 			_selectedTransformHandle=null;
 		}
 	}
-
+	public void toggleSSAO1(bool value){
+		ssao1.enabled = value;
+	}
+	public void toggleSSAO2(bool value){
+		ssao2.enabled = value;
+	}
 	// Update is called once per frame
 	void Update () {
 		//TODO make possible to change the width of the panel  in game mode
@@ -377,5 +387,7 @@ public class UImanager : MonoBehaviour {
 				cuteObject.SetValue(_selectedTransformHandle.cutobject.tagid);
 			}
 		}
+		if (!started)
+			recipe_ingredient_ui.m_myTreeView.toggleInGame (false);
 	}
 }

@@ -109,8 +109,8 @@ void ProteinFillBatchBuffer (uint3 id : SV_DispatchThreadID)
 	bool cutAwayTest = CutAwayTest(float4(sphere.xyz, 0), infos.x);
 	
 	// if instance is culled return
-	if(_CullFlagFilter == -1 && cullFlag == 0) return;	
-	if(_CullFlagFilter != -1 && cullFlag != _CullFlagFilter) return;
+	//if(_CullFlagFilter == -1 && cullFlag == 0) return;	
+	//if(_CullFlagFilter != -1 && cullFlag != _CullFlagFilter) return;
 	if(frustrumTest || cutAwayTest || _ProteinVisibilityFlag[infos.x] == 0) return;
 				
 	int lodLevel = 0;		
