@@ -12,6 +12,12 @@ public class RecipeTreeUI : MonoBehaviour {
 	public CutObject cutobject;
 	public delegate void changeItem(TreeViewItem item,params object[] argsRest);
 
+	private float clicked = 0;
+	private float clicktime = 0;
+	private float clickdelay = 0.5f;
+	private bool doubleclick;
+	private bool toggle_display_on_double_click = false;
+	private int clikCount;
 	// Use this for initialization
 	public void Awake(){
 		_sel = GameObject.Find ("_Selection").GetComponent<HandleSelection>();
@@ -23,17 +29,44 @@ public class RecipeTreeUI : MonoBehaviour {
 		//	ApplyFunctionRec (AddEvents,item);
     }
 
+
+	
+	bool DoubleClick(){
+		if (Input.GetMouseButtonDown (0)) {
+			clikCount = Event.current.clickCount;
+			clicked++;
+			if (clicked == 1) clicktime = Time.time;
+		}         
+		if (clicked > 1 && Time.time - clicktime < clickdelay) {
+			clicked = 0;
+			clicktime = 0;
+			return true;
+		} else if (clicked > 2 || Time.time - clicktime > 1) clicked = 0;         
+		return false;
+	}
+
+
+	public void OnGUI(){
+		bool test = DoubleClick ();
+		if (clikCount > 1)
+			doubleclick = true;
+		else 
+			doubleclick = false;
+	}
+
 	public void toggleChecked(TreeViewItem item, params object[] argsRest ){
+		if (item == m_myTreeView.RootItem)
+			return;
 		bool value = (bool)argsRest[0];
 		item.IsChecked = value;
 		int itemid = SceneManager.Instance.ProteinNames.IndexOf (item.Parent.Header + "_" + item.Header);
 		//apply to the object visibility
 		string ingname = item.Parent.Header + "_" + item.Header;
-		Debug.Log (item.Parent.Header + "_" + item.Header);
-		Debug.Log ("toggle " + itemid.ToString ());
+		//Debug.Log (item.Parent.Header + "_" + item.Header);
+		//Debug.Log ("toggle " + itemid.ToString ());
 		if (itemid == -1) {
 			itemid = SceneManager.Instance.CurveIngredientsNames.IndexOf (item.Parent.Header + "_" + item.Header);
-			Debug.Log ("toggle " + itemid.ToString ());
+			//Debug.Log ("toggle " + itemid.ToString ());
 			if (itemid == -1) {
 				return;
 			} else {
@@ -100,8 +133,9 @@ public class RecipeTreeUI : MonoBehaviour {
 			ApplyFunctionRecValue(toggleChecked,item,false);
 			update=true;
 		}
-		if (args.GetType ().Name == "SelectedEventArgs") {
-			//Debug.Log ("ok selected "+item.Header);
+		if ((args.GetType ().Name == "ClickEventArgs")) {//(args.GetType ().Name == "SelectedEventArgs")||
+			Debug.Log ("ok selected "+item.Header+" "+doubleclick.ToString()+" "+toggle_display_on_double_click.ToString());
+			Debug.Log ("mouseClick "+clikCount);
 			if (!item.HasChildItems()){
 				//SceneManager.Instance.SetSelectedElement(itemid);
 				//Debug.Log ("update label with "+item.Header);
@@ -110,10 +144,20 @@ public class RecipeTreeUI : MonoBehaviour {
 				var ingredientId = SceneManager.Instance.ProteinNames.IndexOf(item.Parent.Header + "_" + item.Header);
 				//all ingredient instance should have state put highlighted 
 				for (int i=0;i <SceneManager.Instance.ProteinInstanceInfos.Count;i++){
-					if (SceneManager.Instance.ProteinInstanceInfos[i].x == ingredientId)
+					if (SceneManager.Instance.ProteinInstanceInfos[i].x == ingredientId){
 						SceneManager.Instance.ProteinInstanceInfos[i] = new Vector4(SceneManager.Instance.ProteinInstanceInfos[i].x, 1, SceneManager.Instance.ProteinInstanceInfos[i].z); 
-					else SceneManager.Instance.ProteinInstanceInfos[i] = new Vector4(SceneManager.Instance.ProteinInstanceInfos[i].x, 3, SceneManager.Instance.ProteinInstanceInfos[i].z); 
+					}else {
+						SceneManager.Instance.ProteinInstanceInfos[i] = new Vector4(SceneManager.Instance.ProteinInstanceInfos[i].x, 3, SceneManager.Instance.ProteinInstanceInfos[i].z); 
+					}
 				}
+
+				if ((doubleclick)) {
+					ApplyFunctionRecValue (toggleChecked, m_myTreeView.RootItem, toggle_display_on_double_click);
+					ApplyFunctionRecValue (toggleChecked, item, true);
+					toggle_display_on_double_click = !toggle_display_on_double_click;
+					update = true;
+				}
+
 				ComputeBufferManager.Instance.ProteinInstanceInfos.SetData(SceneManager.Instance.ProteinInstanceInfos.ToArray());
 				//update camera position to center
 				//Helper.FocusCameraOnGameObject(Camera.main,Vector4.zero,5.0f/PersistantSettings.Instance.Scale);
@@ -137,8 +181,9 @@ public class RecipeTreeUI : MonoBehaviour {
 
     void AddHandlerEvent(out System.EventHandler handler)
     {
-		if (!filter_cut) handler = new System.EventHandler(Handler);
-		else handler = new System.EventHandler(HandlerFilterCut);
+		//if (!filter_cut) handler = new System.EventHandler(Handler);
+		//else handler = new System.EventHandler(HandlerFilterCut);
+		handler = new System.EventHandler(Handler);
     }
 
 	void AddEvents(TreeViewItem item,params object[] argsRest)
