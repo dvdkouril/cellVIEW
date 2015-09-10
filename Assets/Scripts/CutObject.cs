@@ -149,6 +149,11 @@ public class CutObject : MonoBehaviour
 		tree_isVisible = false;
 	}
 
+	public bool tree_hasFocus(Vector2 mousepos){
+		Rect rect = new Rect(_tree.X-60, _tree.Y-60, _tree.Width+90, _tree.Height+90);
+		return rect.Contains(mousepos);
+	}
+
     // This function is meant to keep exisiting cut item and to preserve their original state
     // While removing items which are not present in the source list and that are present in the destination list
     // While also adding elements from the input list and which are not present in the destination list

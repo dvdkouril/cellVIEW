@@ -51,6 +51,8 @@ public class HandleSelection : MonoBehaviour {
 		//update the parent width 
 		RectTransform rec = TextUI.GetComponent<RectTransform> ();
 		//rec.sizeDelta = labelrec.sizeDelta;
+		//rec.sizeDelta = new Vector2(0,labelrec.sizeDelta.y);
+		//rec.up = labelrec.up;
 	}
 
 	void Update () {

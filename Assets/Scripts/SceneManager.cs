@@ -139,6 +139,9 @@ public class SceneManager : MonoBehaviour
 		cutObject.CutType = type;
 		cutObject.setTree ();
 		cutObject.name = gameObject.name;
+		gameObject.transform.localScale = new Vector3 (10, 10, 10);
+		//gameObject.transform.parent = GameObject.Find ("CanvasGeneral").transform;
+		//gameObject.transform.rotation = Quaternion.AngleAxis (-90, Vector3.forward);
     }
 
 	void DoBrownianMotion()

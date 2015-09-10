@@ -99,58 +99,61 @@ public class UImanager : MonoBehaviour {
 	}
 
 	public void cuteObjectTypeChanged(ListBox lb){
-		if (cuteObject.valueInt < SceneManager.Instance.CutObjects.Count) {
+		Debug.Log ("cuteObjectTypeChanged "+current_cross.ToString());
+		if ((current_cross < SceneManager.Instance.CutObjects.Count)&&(current_cross!=-1)) {
 			if (lb.valueInt == 0)
-				SceneManager.Instance.CutObjects [cuteObject.valueInt].CutType = CutType.Plane;
+				SceneManager.Instance.CutObjects [current_cross].CutType = CutType.Plane;
 			else if (lb.valueInt == 1)
-				SceneManager.Instance.CutObjects [cuteObject.valueInt].CutType = CutType.Sphere;
+				SceneManager.Instance.CutObjects [current_cross].CutType = CutType.Sphere;
 			else if (lb.valueInt == 2)
-				SceneManager.Instance.CutObjects [cuteObject.valueInt].CutType = CutType.Cube;
+				SceneManager.Instance.CutObjects [current_cross].CutType = CutType.Cube;
 			else
-				SceneManager.Instance.CutObjects [cuteObject.valueInt].CutType = CutType.Plane;
+				SceneManager.Instance.CutObjects [current_cross].CutType = CutType.Plane;
+			cuteObject.optionSprites [current_cross-1] = lb.optionSprites [lb.valueInt];
+			cuteObject.SetSelectedIndex (current_cross-1);
 		}
-		cuteObject.optionSprites [cuteObject.valueInt] = lb.optionSprites [lb.valueInt];
 		//cuteObject.Reset();
 		//cuteObject.SetSelectedIndex (cuteObject.valueInt);
 	}
+	
 
-	public void toggleDisplayCutObj(bool value) {
-		SceneManager.Instance.CutObjects [cuteObject.valueInt].Display = value;
+	public void cuteObjectChanged(ListBox lb){
+		prev_cross = current_cross;
+		current_cross = cuteObject.valueInt+1;
+		int ty = (int)SceneManager.Instance.CutObjects [current_cross].CutType;
+		//cuteObjectType.valueInt = ty;
+		//cuteObjectType.valueString = cuteObjectType.optionStrings[ty];
+		//cuteObjectType.valueSprite = cuteObjectType.optionSprites[ty];
+		//cuteObjectType.SetSelectedIndex(ty);
+		if (prev_cross!=-1) SceneManager.Instance.CutObjects [prev_cross].hideTree ();
+		SceneManager.Instance.CutObjects [current_cross].showTree (treeviewHolder.position,treeviewHolder.sizeDelta);
+		//display the protein filter tree at the correct position
+		//toggleDisplayTreeCutObj
+		if (_treeVisible) SceneManager.Instance.CutObjects [current_cross].toggleTree (true);
+		toggleCuteObjectSelected (true);
 	}
 
+	public void toggleDisplayCutObj(bool value) {
+		SceneManager.Instance.CutObjects [current_cross].Display = value;
+	}
+	
 	public void toggleDisplayAllCutObject(bool value){
 		//undisplay all ?
-		for (int i =0; i < SceneManager.Instance.CutObjects.Count; i++) {
+		for (int i =1; i < SceneManager.Instance.CutObjects.Count; i++) {
 			SceneManager.Instance.CutObjects [i].Display = value;
 		} 
 	}
-
+	
 	public void toggleDisplayTreeCutObj(bool value) {
 		Debug.Log (current_cross.ToString ());
-		SceneManager.Instance.CutObjects [current_cross].toggleTree(value);
+		if (current_cross!=-1)SceneManager.Instance.CutObjects [current_cross].toggleTree(value);
 		_treeVisible = value;
 	}
-
+	
 	public void toggleDescription(bool val){
 		if (_sel != null)
 			_sel.cgroup.alpha = (float)Convert.ToInt32(val);
 	}
-
-	public void cuteObjectChanged(ListBox lb){
-		prev_cross = current_cross;
-		current_cross = cuteObject.valueInt;
-		int ty = (int)SceneManager.Instance.CutObjects [cuteObject.valueInt].CutType;
-		//cuteObjectType.valueInt = ty;
-		//cuteObjectType.valueString = cuteObjectType.optionStrings[ty];
-		//cuteObjectType.valueSprite = cuteObjectType.optionSprites[ty];
-		cuteObjectType.SetSelectedIndex(ty);
-		SceneManager.Instance.CutObjects [prev_cross].hideTree ();
-		SceneManager.Instance.CutObjects [cuteObject.valueInt].showTree (treeviewHolder.position,treeviewHolder.sizeDelta);
-		//display the protein filter tree at the correct position
-		//toggleDisplayTreeCutObj
-		if (_treeVisible) SceneManager.Instance.CutObjects [cuteObject.valueInt].toggleTree (true);
-	}
-
 	public void initProgressBar(){
 		if (progressLabel == null) {
 			progressLabel = progressBar.GetComponentInChildren<Text> ();
@@ -232,6 +235,12 @@ public class UImanager : MonoBehaviour {
 		}
 		if (buttonName == "cutobjectadd") {
 			SceneManager.Instance.AddCutObject(0);
+			if (SceneManager.Instance.CutObjects.Count == 2){
+				//first one
+				SceneManager.Instance.CutObjects[1].CutType = CutType.Cube;
+				SceneManager.Instance.CutObjects[1].gameObject.transform.position = new Vector3(50,0,0);
+				SceneManager.Instance.CutObjects[1].gameObject.transform.localScale = new Vector3(100,200,300);
+			}
 			//update the cutObject List
 			//add a TreeView + parameter
 		}
@@ -335,7 +344,10 @@ public class UImanager : MonoBehaviour {
 		GameObject objectToDelete = GameObject.Find(cuteObject.valueString);
 		if (objectToDelete != null )
 			GameObject.DestroyObject (objectToDelete);
+		//remove from the CutObj.panel
+		cuteObject.Reset ();
 	}
+
 	public void hideSettingPanel(){
 		current_panel = -1;
 		if (settings_ui!= null) settings_ui.valueString = null;
@@ -345,17 +357,16 @@ public class UImanager : MonoBehaviour {
 	}
 
 	public void toggleCuteObjectSelected(bool value){
-		TransformHandle _selectedTransformHandle = nvcamera._selectedTransformHandle;
+		for (int i=1; i<SceneManager.Instance.CutObjects.Count; i++) {
+			SceneManager.Instance.CutObjects [i].handle.Disable();
+		}
 		if (value) {
-			if (_selectedTransformHandle!=null) 
-				_selectedTransformHandle.Disable();
-			_selectedTransformHandle = SceneManager.Instance.CutObjects [cuteObject.valueInt].handle;
-			_selectedTransformHandle.Enable();
-		} else {
-			_selectedTransformHandle.Disable();
-			_selectedTransformHandle=null;
+			nvcamera._selectedTransformHandle = SceneManager.Instance.CutObjects [current_cross].handle;
+			nvcamera._selectedTransformHandle.Enable();
+			nvcamera.handleMode = true;
 		}
 	}
+
 	public void toggleSSAO1(bool value){
 		ssao1.enabled = value;
 	}
@@ -410,32 +421,32 @@ public class UImanager : MonoBehaviour {
 			}
 		}
 		//update the ListBOx of cutting object
-		if (cuteObject.optionInts.Length != SceneManager.Instance.CutObjects.Count) {
-			cuteObject.optionInts=new int[SceneManager.Instance.CutObjects.Count];
-			cuteObject.optionStrings=new string[SceneManager.Instance.CutObjects.Count];
-			cuteObject.optionSprites=new Sprite[SceneManager.Instance.CutObjects.Count];
+		if ((cuteObject.optionInts.Length != SceneManager.Instance.CutObjects.Count-1)&&(SceneManager.Instance.CutObjects.Count>1)) {
+			cuteObject.optionInts=new int[SceneManager.Instance.CutObjects.Count-1];
+			cuteObject.optionStrings=new string[SceneManager.Instance.CutObjects.Count-1];
+			cuteObject.optionSprites=new Sprite[SceneManager.Instance.CutObjects.Count-1];
 
-			for (int i = 0; i < SceneManager.Instance.CutObjects.Count;i++){
-				cuteObject.optionInts[i]=i;
-				cuteObject.optionStrings[i]=SceneManager.Instance.CutObjects[i].gameObject.name;
-				cuteObject.optionSprites[i]=cuteObjectType.optionSprites[(int)SceneManager.Instance.CutObjects[i].CutType];
+			for (int i = 1; i < SceneManager.Instance.CutObjects.Count;i++){
+				//if (SceneManager.Instance.CutObjects[i].gameObject.name == "CutSelection") continue;
+				cuteObject.optionInts[i-1]=i-1;
+				cuteObject.optionStrings[i-1]=SceneManager.Instance.CutObjects[i].gameObject.name;
+				cuteObject.optionSprites[i-1]=cuteObjectType.optionSprites[(int)SceneManager.Instance.CutObjects[i].CutType];
 			}
 		}
-		if (cuteObject.valueInt != current_cross) {
+		if (cuteObject.valueInt-1 != current_cross) {
 			//update or use on ValueChanged
 			//do something
-			current_cross = cuteObject.valueInt;
+			current_cross = cuteObject.valueInt+1;
 			//display the object tree. should we attach the tree to the gameObjectCutPlan ? and just display it
 		}
-		if (cuteObject.valueInt < SceneManager.Instance.CutObjects.Count) {
-			if (SceneManager.Instance.CutObjects [cuteObject.valueInt].tree_isVisible)
-				SceneManager.Instance.CutObjects [cuteObject.valueInt].showTree (treeviewHolder.position, treeviewHolder.rect.size);
+		if ((current_cross < SceneManager.Instance.CutObjects.Count)&&(current_cross!=-1)) {
+			if (SceneManager.Instance.CutObjects [current_cross].tree_isVisible)
+				SceneManager.Instance.CutObjects [current_cross].showTree (treeviewHolder.position, treeviewHolder.rect.size);
 		}
 		//check if current selected cutObjecy different from the active one in the menu
-		TransformHandle _selectedTransformHandle = nvcamera._selectedTransformHandle;
-		if (_selectedTransformHandle != null) {
-			if (_selectedTransformHandle.cutobject.name!=cuteObject.valueString){
-				cuteObject.SetValue(_selectedTransformHandle.cutobject.tagid);
+		if (nvcamera._selectedTransformHandle != null) {
+			if (nvcamera._selectedTransformHandle.cutobject.name!=cuteObject.valueString){
+				cuteObject.SetValue(nvcamera._selectedTransformHandle.cutobject.tagid-1);
 			}
 		}
 		if (!started)

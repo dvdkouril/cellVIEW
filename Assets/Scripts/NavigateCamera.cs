@@ -113,6 +113,17 @@ public class NavigateCamera : MonoBehaviour
             EditorUtility.SetDirty(this); // this is important, if omitted, "Mouse down" will not be display
         }
         #endif
+
+		//if handleMode and the mouse is on the TreeView do nothing
+		if ( _selectedTransformHandle != null ){
+			if (_selectedTransformHandle.cutobject.tree_isVisible){
+				Debug.Log ("focus where ?"+Event.current.mousePosition.ToString ());
+				if (_selectedTransformHandle.cutobject.tree_hasFocus(Event.current.mousePosition)){
+					return;
+				}
+			}
+		}
+
 		bool arc_ball_altkey = handleMode? Event.current.alt:!Event.current.alt;
 			// Arc ball rotation
 		if (arc_ball_altkey && Event.current.type == EventType.mouseDrag && Event.current.button == 0) {

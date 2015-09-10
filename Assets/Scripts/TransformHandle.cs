@@ -56,7 +56,9 @@ public class TransformHandle : MonoBehaviour
 	private static float s_ValueDrag;
 
 	private float snap = 0.0f;
-    //*****//
+    
+	[HideInInspector]
+	public bool allow_manipulation=true;//*****//
 	public CutObject cutobject;
 
     public void Enable()
@@ -138,6 +140,10 @@ public class TransformHandle : MonoBehaviour
         _handleSize = MyHandleUtility.GetHandleSize(transform.position);
         
         BeginHandle();
+		//test if treeView hasFocus
+		if ((cutobject.tree_isVisible)&&(cutobject.tree_hasFocus (Event.current.mousePosition))) {
+			return;
+		}
 		if (!Event.current.alt) {
 			switch (_state) {
 			case SelectionState.Scale:
