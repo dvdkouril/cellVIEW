@@ -3,6 +3,8 @@ using UnityEngine.UI;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+
 using SimpleJSON;
 using System.Threading;
 
@@ -18,11 +20,12 @@ public class UImanager : MonoBehaviour {
 	public ListBox settings_ui;
 	public ListBox cuteObject;
 	public ListBox cuteObjectType;
-
+	public ToggleGroup crossmode;
+	public List<Toggle> toggles_handle;
 	public HandleSelection _sel;
 	public RecipeTreeUI recipe_ingredient_ui;
 	//public TreeViewControl cutObjectFilter;
-
+	public NavigateCamera nvcamera;
 	public GameObject panel_canvas;
 	public int maxwidth;
 	public JSONNode AllRecipes;
@@ -51,6 +54,7 @@ public class UImanager : MonoBehaviour {
 	private int current_cross=-1;
 	private int current_panel=-1;
 	private Sprite[] sprites;
+	
 	void  gatherRecipes(){
 		if (AllRecipes == null) 
 			AllRecipes = Helper.GetAllRecipeInfo ();
@@ -85,6 +89,13 @@ public class UImanager : MonoBehaviour {
 		cuteObject.onValueChanged = cuteObjectChanged;
 		//treeviewHolder = GameObject.Find ("TreeViewPlaceHolder").GetComponent<RectTransform> ();
 		//shoulld we load asynchrone the scene while user look at the info+control?
+		if (nvcamera == null)
+			nvcamera = Camera.main.GetComponent<NavigateCamera> ();
+	}
+
+	void Start(){
+		if (nvcamera == null)
+			nvcamera = Camera.main.GetComponent<NavigateCamera> ();
 	}
 
 	public void cuteObjectTypeChanged(ListBox lb){
@@ -166,6 +177,25 @@ public class UImanager : MonoBehaviour {
 		progressLabel.text = label;
 		progressBarRec.sizeDelta = new Vector2(0,progressBarRec.sizeDelta.y);
 	}
+
+	public void toggleHandleMode(int i){
+		//NavigateCamera nc = Camera.main.GetComponent<NavigateCamera> ();
+		switch (i) {
+			case 0: 
+				nvcamera._currentState = SelectionState.Translate;
+				break;
+			case 1:
+				nvcamera._currentState = SelectionState.Rotate;
+				break;
+			case 2:
+				nvcamera._currentState = SelectionState.Scale;
+				break;
+			default:
+				nvcamera._currentState = SelectionState.Translate;
+				break;
+			}
+		}
+
 	//button callback
 	public void buttonCallback(string buttonName){
 		if (buttonName == "clear") {
@@ -220,13 +250,13 @@ public class UImanager : MonoBehaviour {
 			started = true;
 		}
 		if (buttonName == "unselect") {
-			if (Camera.main.GetComponent<NavigateCamera>().handleMode){
-				TransformHandle _selectedTransformHandle = Camera.main.GetComponent<NavigateCamera> ()._selectedTransformHandle;
+			if (nvcamera.handleMode){
+				TransformHandle _selectedTransformHandle = nvcamera._selectedTransformHandle;
 				if (_selectedTransformHandle!=null){ 
 					_selectedTransformHandle.Disable();
 					_selectedTransformHandle = null;
 				}
-				Camera.main.GetComponent<NavigateCamera>().handleMode = false;
+				nvcamera.handleMode = false;
 			}
 			else {
 				SceneManager.Instance.SetSelectedElement(-1);
@@ -315,7 +345,7 @@ public class UImanager : MonoBehaviour {
 	}
 
 	public void toggleCuteObjectSelected(bool value){
-		TransformHandle _selectedTransformHandle = Camera.main.GetComponent<NavigateCamera> ()._selectedTransformHandle;
+		TransformHandle _selectedTransformHandle = nvcamera._selectedTransformHandle;
 		if (value) {
 			if (_selectedTransformHandle!=null) 
 				_selectedTransformHandle.Disable();
@@ -333,6 +363,27 @@ public class UImanager : MonoBehaviour {
 		ssao2.enabled = value;
 	}
 	// Update is called once per frame
+	void OnGUI (){
+		if (crossmode == null)
+			return;
+		if (Event.current.keyCode == KeyCode.Alpha1)
+		{
+			toggles_handle[0].isOn = true;
+			crossmode.NotifyToggleOn(toggles_handle[0]);
+		}
+		
+		if (Event.current.keyCode == KeyCode.Alpha2)
+		{
+			toggles_handle[1].isOn = true;
+			crossmode.NotifyToggleOn(toggles_handle[1]);
+		}
+		
+		if (Event.current.keyCode == KeyCode.Alpha3)
+		{
+			toggles_handle[2].isOn = true;
+			crossmode.NotifyToggleOn(toggles_handle[2]);
+		}
+	}
 	void Update () {
 		//TODO make possible to change the width of the panel  in game mode
 		//update the treeView size according the panel size
@@ -381,7 +432,7 @@ public class UImanager : MonoBehaviour {
 				SceneManager.Instance.CutObjects [cuteObject.valueInt].showTree (treeviewHolder.position, treeviewHolder.rect.size);
 		}
 		//check if current selected cutObjecy different from the active one in the menu
-		TransformHandle _selectedTransformHandle = Camera.main.GetComponent<NavigateCamera> ()._selectedTransformHandle;
+		TransformHandle _selectedTransformHandle = nvcamera._selectedTransformHandle;
 		if (_selectedTransformHandle != null) {
 			if (_selectedTransformHandle.cutobject.name!=cuteObject.valueString){
 				cuteObject.SetValue(_selectedTransformHandle.cutobject.tagid);

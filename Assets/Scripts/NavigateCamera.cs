@@ -12,7 +12,9 @@ using UnityEditor;
 [ExecuteInEditMode]
 public class NavigateCamera : MonoBehaviour
 {
-    private SelectionState _currentState = SelectionState.Translate;
+
+	[HideInInspector]
+    public SelectionState _currentState = SelectionState.Translate;
     
 	[HideInInspector]
 	public TransformHandle _selectedTransformHandle;
@@ -37,7 +39,6 @@ public class NavigateCamera : MonoBehaviour
     /*****/
 
     private GameObject Target;
-
     private bool forward;
     private bool backward;
     private bool right;
