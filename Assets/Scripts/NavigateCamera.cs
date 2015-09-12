@@ -267,7 +267,7 @@ public class NavigateCamera : MonoBehaviour
 
         bool doubleClick = false;
         
-        if (Event.current.type == EventType.MouseDown && Event.current.button == 0)
+        if (Event.current.type == EventType.MouseUp && Event.current.button == 0)
         {
             var delta = Time.realtimeSinceStartup - doubleClickTimeStart;
             Debug.Log(delta);

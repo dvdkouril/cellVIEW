@@ -193,11 +193,12 @@ public static class CellPackLoader
 				atomSpheres = Helper.gatherSphereTree(ingredientDictionary)[0];
 				Debug.Log ("nbprim "+atomSpheres.Count.ToString());//one sphere
 			} else {
-				return;
+				atomSpheres = new List<Vector4>();
+				atomSpheres.Add (new Vector4(0,0,0,30));
 			}
 		} else {
 			if (pdbName.StartsWith("EMDB")) return;
-			if (pdbName.Contains("1PI7_1vpu_biounit")) return;//??
+			//if (pdbName.Contains("1PI7_1vpu_biounit")) return;//??
 			// Load atom set from pdb file
 			var atomSet = PdbLoader.LoadAtomSet(pdbName);
 			
@@ -206,23 +207,23 @@ public static class CellPackLoader
 		
 			atomSpheres = AtomHelper.GetAtomSpheres(atomSet);
 			containsACarbonOnly = AtomHelper.ContainsACarbonOnly(atomSet);
-			biomtTransforms = biomt ? PdbLoader.LoadBiomtTransforms(pdbName) : new List<Matrix4x4>();
-			biomtCenter = AtomHelper.GetBiomtCenter(biomtTransforms);
 		}
+		var centerPosition = AtomHelper.ComputeBounds(atomSpheres).center;       
 		
+		// Center atoms
+		AtomHelper.OffsetSpheres(ref atomSpheres, centerPosition);
+		
+		// Compute bounds
+		var bounds = AtomHelper.ComputeBounds(atomSpheres);
+
+		biomtTransforms = biomt ? PdbLoader.LoadBiomtTransforms(pdbName) : new List<Matrix4x4>();
+		biomtCenter = AtomHelper.GetBiomtCenter(biomtTransforms,centerPosition);
+
 		//if (!pdbName.Contains("1TWT_1TWV")) return;
         
         // Disable biomts until loading problem is resolved
-        if (biomt) return;
+        //if (!biomt) return;
         
-
-        var centerPosition = AtomHelper.ComputeBounds(atomSpheres).center;       
-
-        // Center atoms
-        AtomHelper.OffsetSpheres(ref atomSpheres, centerPosition);
-
-        // Compute bounds
-        var bounds = AtomHelper.ComputeBounds(atomSpheres);
 
         // Get ingredient color
         // TODO: Move color palette code into dedicated function
@@ -266,11 +267,16 @@ public static class CellPackLoader
             {
                 foreach (var transform in biomtTransforms)
                 {
-                    var biomtOffset = Helper.RotationMatrixToQuaternion(transform) * centerPosition;
-                    var biomtInstanceRot = rotation * Helper.RotationMatrixToQuaternion(transform);
-                    var biomtInstancePos = rotation * (new Vector3(transform.m03, transform.m13, transform.m23) + biomtOffset) + position - biomtCenter;
+					var biomteuler = Helper.euler_from_matrix(transform);
+					var rotBiomt = Helper.MayaRotationToUnity(biomteuler);
+					var offset = Helper.QuaternionTransform(rotBiomt,centerPosition);//Helper.RotationMatrixToQuaternion(matBiomt), GetCenter());
+					var posBiomt = new Vector3(-transform.m03, transform.m13, transform.m23)+offset - biomtCenter;
 
-                    SceneManager.Instance.AddIngredientInstance(name, biomtInstancePos, biomtInstanceRot);
+					var biomtOffset = Helper.RotationMatrixToQuaternion(transform) * centerPosition;
+					var biomtInstanceRot = rotation * rotBiomt;//Helper.RotationMatrixToQuaternion(transform);
+					var biomtInstancePos = rotation * posBiomt + position;
+
+					SceneManager.Instance.AddIngredientInstance(name, biomtInstancePos, biomtInstanceRot);
                     instanceCount++;
                 }
             }

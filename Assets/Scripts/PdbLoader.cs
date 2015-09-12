@@ -366,7 +366,7 @@ public static class AtomHelper
         return biomtSpheres;
     }
 
-    public static Vector3 GetBiomtCenter(List<Matrix4x4> transforms)
+    public static Vector3 GetBiomtCenter(List<Matrix4x4> transforms, Vector3 center)
     {
         if (transforms.Count <= 0) return Vector3.zero;
 
@@ -375,7 +375,10 @@ public static class AtomHelper
 
         foreach (var transform in transforms)
         {
-            var posBiomt = new Vector3(transform.m03, transform.m13, transform.m23);
+			var euler = Helper.euler_from_matrix(transform);
+			var rotBiomt = Helper.MayaRotationToUnity(euler);
+			var offset = Helper.QuaternionTransform(rotBiomt,center);//Helper.RotationMatrixToQuaternion(matBiomt), GetCenter());
+			var posBiomt = new Vector3(-transform.m03, transform.m13, transform.m23);
 
             bbMin = Vector3.Min(bbMin, new Vector3(posBiomt.x, posBiomt.y, posBiomt.z));
             bbMax = Vector3.Max(bbMax, new Vector3(posBiomt.x, posBiomt.y, posBiomt.z));
