@@ -88,7 +88,9 @@ public static class CellPackLoader
         if (!File.Exists(cellPackSceneJsonPath)) throw new Exception("No file found at: " + cellPackSceneJsonPath);
 		//this assume a result file from cellpack, not a recipe file.
         resultData = Helper.ParseJson(cellPackSceneJsonPath);
-		
+
+		SceneManager.Instance.buildHierarchy (resultData);
+
 		int nCompartemnts = 0;
         //we can traverse the json dictionary and gather ingredient source (PDB,center), sphereTree, instance.geometry if we want.
         //the recipe is optional as it will gave more information than just the result file.
@@ -233,7 +235,7 @@ public static class CellPackLoader
         // Define cluster decimation levels
         var clusterLevels = (containsACarbonOnly)
             ? new List<float>() {0.85f, 0.25f, 0.1f}
-            : new List<float>() {0.20f, 0.10f, 0.05f};
+            : new List<float>() {0.15f, 0.10f, 0.05f};
         
         // Add ingredient type
         //SceneManager.Instance.AddIngredient(name, bounds, atomSpheres, color);

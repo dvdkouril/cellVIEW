@@ -24,7 +24,7 @@ public class NavigateCamera : MonoBehaviour
     const float DefaultDistance = 5.0f;
 
     public Vector3 TargetPosition;
-	public Vector3 DampTargetPosition;
+    public Vector3 DampTargetPosition = new Vector3(0, 0, 0);
     public float AcrBallRotationSpeed = 0.25f;
     public float FpsRotationSpeed = 0.25f;
     public float TranslationSpeed = 2.0f;
@@ -45,69 +45,147 @@ public class NavigateCamera : MonoBehaviour
     private bool left;
 	private Vector3 velocity = Vector3.zero;
     /*****/
-
-    void OnEnable()
-    {
-        #if UNITY_EDITOR
-        if (!EditorApplication.isPlaying) EditorApplication.update += Update;
-        #endif
-    }
-
+    
     private float deltaTime = 0;
     private float lastUpdateTime = 0;
-
     private float deltaScroll;
+    
+    public bool freeMoveMode = false;
+    public bool lockInteractions = false;
+    public bool animateCameraIn = false;
+    public bool animateCameraOut = false;
 
+    public Vector3 StoredPosition;
+
+	//
     void Update()
     {
         deltaTime = Time.realtimeSinceStartup - lastUpdateTime;
         lastUpdateTime = Time.realtimeSinceStartup;
-		float smoothTime = 1.0f; 
-		if (DampTargetPosition != Vector3.zero) {
-			//TargetPosition=DampTargetPosition;
-			transform.position = Vector3.SmoothDamp(transform.position,DampTargetPosition,ref velocity,smoothTime);
-			if (Vector3.Distance(transform.position,DampTargetPosition) < 1.00f) {
-				DampTargetPosition = Vector3.zero;
-			}
-			//transform.position = TargetPosition - transform.forward * Distance;
-		}
-        //Debug.Log(deltaTime);
+        float smoothTime = 0.5f;              
 
-        if (forward)
+        //*********//
+
+        if (animateCameraIn)
         {
-            TargetPosition += gameObject.transform.forward * TranslationSpeed * deltaTime; 
-            transform.position += gameObject.transform.forward * TranslationSpeed * deltaTime; 
+            freeMoveMode = false;
+            lockInteractions = true;
+
+            //TargetPosition=DampTargetPosition;
+
+            if (Vector3.Distance(transform.position, DampTargetPosition) < 1.0f)
+            {
+                transform.position = Vector3.SmoothDamp(transform.position, DampTargetPosition, ref velocity, smoothTime * 5);
+            }
+            else
+            {
+                transform.position = Vector3.SmoothDamp(transform.position, DampTargetPosition, ref velocity, smoothTime);
+            }
+
+            if (Vector3.Distance(transform.position, DampTargetPosition) < 0.1f)
+            {
+                animateCameraIn = false;
+                lockInteractions = false;
+				PersistantSettings.Instance.SpeedFactor = 0.2f;
+            }
         }
 
-        if (backward)
+        //*********//
+
+        if (animateCameraOut)
         {
-            TargetPosition -= gameObject.transform.forward * TranslationSpeed * deltaTime;
-            transform.position -= gameObject.transform.forward * TranslationSpeed * deltaTime; 
+            lockInteractions = true;
+			StoredPosition = new Vector3 (-320, 0, 0);
+			TargetPosition = new Vector3 (0, 0, 0);
+
+            //TargetPosition=DampTargetPosition;
+
+            transform.forward = Vector3.Normalize(TargetPosition - transform.position);
+
+            //var rotation = Quaternion.Euler(EulerAngleY, EulerAngleX, 0.0f);
+            //var position = TargetPosition - rotation * Vector3.forward * Vector3.Distance(TargetPosition, transform.position);
+
+            //transform.rotation = rotation;
+            //transform.position = position;
+
+            if (Vector3.Distance(transform.position, StoredPosition) < 1.0f)
+            {
+                transform.position = Vector3.SmoothDamp(transform.position, StoredPosition, ref velocity, smoothTime * 5);
+            }
+            else
+            {
+                transform.position = Vector3.SmoothDamp(transform.position, StoredPosition, ref velocity, smoothTime);
+            }
+
+            if (Vector3.Distance(transform.position, StoredPosition) < 0.1f)
+            {
+                animateCameraOut = false;
+                lockInteractions = false;
+                //freeMoveMode = true;
+            }
         }
 
-        if (right)
-        {
-            TargetPosition += gameObject.transform.right * TranslationSpeed * deltaTime;
-            transform.position += gameObject.transform.right * TranslationSpeed * deltaTime; 
-        }
+        //*********//
 
-        if (left)
+        if(freeMoveMode)
         {
-            TargetPosition -= gameObject.transform.right * TranslationSpeed * deltaTime;
-            transform.position -= gameObject.transform.right * TranslationSpeed * deltaTime; 
-        }
+            if (forward)
+            {
+                transform.position += gameObject.transform.forward * TranslationSpeed * deltaTime;
+            }
 
+            if (backward)
+            {
+                transform.position -= gameObject.transform.forward * TranslationSpeed * deltaTime;
+            }
+
+            if (right)
+            {
+                transform.position += gameObject.transform.right * TranslationSpeed * deltaTime;
+            }
+
+            if (left)
+            {
+                transform.position -= gameObject.transform.right * TranslationSpeed * deltaTime;
+            }
+
+            if (freeMoveMode)
+            {
+                TargetPosition = transform.position + transform.forward * 2;
+                Distance = Vector3.Distance(transform.position, TargetPosition);
+            }
+        }
     }
 
-	public void CenterView (){
-		Distance = 320.0f;
-		TargetPosition = Vector3.zero;
-		transform.position = TargetPosition - transform.forward * Distance;
+    private float leftClickTimeStart;
+    private float rightClickTimeStart;
+    private float doubleClickTimeStart;
+
+    public bool hardFocusFlag = false;
+
+	public void resetCamera(){
+
+		SceneManager.Instance.SetSelectedElement(-1);
+		animateCameraIn = false;
+		lockInteractions = false;
+		//animateCameraOut = true;
+		PersistantSettings.Instance.NearCullPlane = 0;
+		StoredPosition = new Vector3 (-320, 0, 0);
+		TargetPosition = new Vector3 (0, 0, 0);
+		transform.position = new Vector3 (-320, 0, 0);
+		transform.rotation = Quaternion.AngleAxis (90, Vector3.up);
+		PersistantSettings.Instance.SpeedFactor = 2.0f;
 	}
-	
-	private void OnGUI()
+
+    private void OnGUI()
 	{
-		#if UNITY_EDITOR
+		if (Event.current.keyCode == KeyCode.R)
+		{
+			resetCamera();
+		}
+		if (lockInteractions) return;
+
+        #if UNITY_EDITOR
         if (Event.current.type == EventType.Layout || Event.current.type == EventType.Repaint)
         {
             EditorUtility.SetDirty(this); // this is important, if omitted, "Mouse down" will not be display
@@ -122,87 +200,40 @@ public class NavigateCamera : MonoBehaviour
 					return;
 				}
 			}
-		}
+		}        
 
-		bool arc_ball_altkey = handleMode? Event.current.alt:!Event.current.alt;
-			// Arc ball rotation
-		if (arc_ball_altkey && Event.current.type == EventType.mouseDrag && Event.current.button == 0) {
+        // Arc ball rotation
+        if (Event.current.type == EventType.mouseDrag && Event.current.button == 0)
+        {
 			EulerAngleX += Event.current.delta.x * AcrBallRotationSpeed;
-			EulerAngleY += Event.current.delta.y * AcrBallRotationSpeed; 
+			EulerAngleY += Event.current.delta.y * AcrBallRotationSpeed;
 
-			var rotation = Quaternion.Euler (EulerAngleY, EulerAngleX, 0.0f);
-			//var position = TargetPosition + rotation * Vector3.back * Distance;//back ?
-			var position = TargetPosition - rotation * Vector3.forward * Distance;//back ?
-			transform.rotation = rotation;
+            transform.rotation *= Quaternion.Euler(Event.current.delta.y * AcrBallRotationSpeed, Event.current.delta.x * AcrBallRotationSpeed, 0.0f);
+            var angles = transform.rotation.eulerAngles;
+            angles.z = 0;
+            transform.rotation = Quaternion.Euler(angles);
+            var position = TargetPosition - transform.rotation * Vector3.forward * Vector3.Distance(TargetPosition, transform.position);
+
+			
 			transform.position = position;
 		}
 
-		// Fps rotation
-		if (Event.current.control && Event.current.type == EventType.mouseDrag && Event.current.button == 0) {
-			EulerAngleX += Event.current.delta.x * FpsRotationSpeed;
-			EulerAngleY += Event.current.delta.y * FpsRotationSpeed; 
-
-			var rotation = Quaternion.Euler (EulerAngleY, EulerAngleX, 0.0f);
-
-			transform.rotation = rotation;
-			TargetPosition = transform.position + transform.forward * Distance;
-		}
-
-		if (arc_ball_altkey && Event.current.type == EventType.mouseDrag && Event.current.button == 2) {
-			TargetPosition += transform.up * Event.current.delta.y * PannigSpeed;
-			transform.position += transform.up * Event.current.delta.y * PannigSpeed;
-
-			TargetPosition -= transform.right * Event.current.delta.x * PannigSpeed;
-			transform.position -= transform.right * Event.current.delta.x * PannigSpeed; 
-		}
-
-		if (Event.current.type == EventType.ScrollWheel) {
-			Distance += Event.current.delta.y * ZoomingSpeed;
-			transform.position = TargetPosition - transform.forward * Distance;
-
-			if (Distance < 0) {
-				TargetPosition = transform.position + transform.forward * DefaultDistance;
-				Distance = Vector3.Distance (TargetPosition, transform.position);
-			}
-			var d = Input.GetAxis("Mouse ScrollWheel");
-			if (d < 0) {
-				//zooming out
-				SceneManager.Instance.SetSelectedElement(-1);
-			}
-		}
-        if (Event.current.type == EventType.KeyDown)
+		if (Event.current.type == EventType.mouseDrag && Event.current.button == 2)//freeMoveMode && 
         {
-            if (Event.current.keyCode == KeyCode.R)
-            {
-				if (handleMode) {
-					//reset current handle to 0,0,0
-					_selectedTransformHandle.transform.position = Vector3.zero;
-					_selectedTransformHandle.transform.rotation = Quaternion.identity;
-					_selectedTransformHandle.transform.localScale = Vector3.one*50;//depend on the type
-					if (_selectedTransformHandle.gameObject.GetComponent<CutObject>().CutType == 0 )
-						_selectedTransformHandle.transform.localScale = Vector3.one*10;
-				}
-				else {
-                	Distance = 320.0f;
-                	TargetPosition = Vector3.zero;
-                	transform.position = TargetPosition - transform.forward * Distance;
-				}
-				SceneManager.Instance.SetSelectedElement(-1);//unselect everything ?
-			}
-            //if (Event.current.keyCode == KeyCode.F)
-            //{
-            //    if (!Target)
-            //    {
-            //        Target = GameObject.Find("Selected Element");
-            //    }
+            TargetPosition += transform.up * Event.current.delta.y * PannigSpeed;
+            transform.position += transform.up * Event.current.delta.y * PannigSpeed;
 
-            //    if (Target)
-            //    {
-            //        //Distance = 75;
-            //        TargetPosition = Target.gameObject.transform.position;
-            //        transform.position = TargetPosition - transform.forward * Distance;
-            //    }
-            //}
+            TargetPosition -= transform.right * Event.current.delta.x * PannigSpeed;
+            transform.position -= transform.right * Event.current.delta.x * PannigSpeed;
+        }
+
+		if (Event.current.type == EventType.ScrollWheel)//freeMoveMode && 
+        {
+            transform.position -= transform.forward * Event.current.delta.y * ZoomingSpeed;
+			//distance to target;
+			float d = Vector3.Distance(transform.position,TargetPosition);
+			PersistantSettings.Instance.SpeedFactor = (d*2.0f)/320.0f;
+			Debug.Log (PersistantSettings.Instance.SpeedFactor.ToString());
         }
 
         if (Event.current.keyCode == KeyCode.W)
@@ -229,66 +260,144 @@ public class NavigateCamera : MonoBehaviour
         // Object picking
         //*********//
 
+        bool doubleClick = false;
+        
+        if (Event.current.type == EventType.MouseDown && Event.current.button == 0)
+        {
+            var delta = Time.realtimeSinceStartup - doubleClickTimeStart;
+            Debug.Log(delta);
+            if (delta < 0.25f)
+            {
+                doubleClick = true;
+            }
+
+            doubleClickTimeStart = Time.realtimeSinceStartup;
+        }
+
+        //*****//
+
+        bool rightClick = false;
+
         if (Event.current.type == EventType.MouseDown && Event.current.button == 1)
+        {
+            rightClickTimeStart = Time.realtimeSinceStartup;
+        }
+
+        if (Event.current.type == EventType.MouseDrag && Event.current.button == 1)
+        {
+            rightClickTimeStart = 0;
+        }
+
+        if (Event.current.type == EventType.MouseUp && Event.current.button == 1)
+        {
+            var delta = Time.realtimeSinceStartup - rightClickTimeStart;
+                        
+            if (delta < 0.5f)
+            {
+                rightClick = true;
+            }
+        }
+              
+
+        //*****//
+
+        bool leftClick = false;
+
+	    if (Event.current.type == EventType.MouseDown && Event.current.button == 0)
+	    {
+            leftClickTimeStart = Time.realtimeSinceStartup;
+	    }
+
+        if (Event.current.type == EventType.MouseDrag && Event.current.button == 0)
+        {
+            leftClickTimeStart = 0;
+        }
+
+        if (Event.current.type == EventType.MouseUp && Event.current.button == 0)
+        {
+            var delta = Time.realtimeSinceStartup - leftClickTimeStart;
+            if (delta < 0.5f)
+            {
+                leftClick = true;
+            }
+        }
+
+        //*****//
+
+        if (rightClick && !freeMoveMode)
+        {
+            SceneManager.Instance.SetSelectedElement(-1);
+            animateCameraOut = true;
+            PersistantSettings.Instance.NearCullPlane = 0;
+        }
+
+        //if (!freeMoveMode) return;
+
+        if (doubleClick || leftClick)
         {
 			Debug.Log ("object picking");
 			var mousePos = Event.current.mousePosition;
-            Ray CameraRay = Camera.main.ScreenPointToRay(new Vector3(mousePos.x, Screen.height - mousePos.y, 0));
-            RaycastHit hit;
 
-            // If we hit an object
-            if (Physics.Raycast(CameraRay, out hit, 10000))
-            {
-                var transformHandle = hit.collider.gameObject.GetComponent<TransformHandle>();
-                // If we hit a new selectable object
-                if (transformHandle != null && transformHandle != _selectedTransformHandle)
-                {
-					if (hit.collider.gameObject.GetComponent<CutObject>().Display){
-	                    if (_selectedTransformHandle != null)
-	                    {
-	                        //Debug.Log("Reset");
-	                        _selectedTransformHandle.Disable();
-	                    }
-	                    //Debug.Log("Selected transform: " + transformHandle.gameObject.name);
-	                    transformHandle.Enable();
-	                    transformHandle.SetSelectionState(_currentState);
-	                    _selectedTransformHandle = transformHandle;
-						handleMode = true;
-					}
-					else {
-						render._mousePos = mousePos;
-						render._rightMouseDown = true;
-					}
-				}
-                // If we hit a non-selectable object
-                else if (transformHandle == null && _selectedTransformHandle != null)
-                {
-                    //Debug.Log("Reset");
-                    _selectedTransformHandle.Disable();
-                    _selectedTransformHandle = null;
-					handleMode=false;
-                }
-				else {
-					render._mousePos = mousePos;
-					render._rightMouseDown = true;
-				}
-            }
-            // If we miss a hit
-            else if (_selectedTransformHandle != null)
-            {
-                //Debug.Log("Reset");
-                _selectedTransformHandle.Disable();
-                _selectedTransformHandle = null;
-				handleMode=false;
-            	//check if hit a  protein
-				render._mousePos = mousePos;
+            render._mousePos = mousePos;
+            render._rightMouseDown = true;
+            hardFocusFlag = doubleClick;
 
-				render._rightMouseDown = true;
-			}
-			else {
-				render._mousePos = mousePos;
-				render._rightMouseDown = true;
-			}
+            //Ray CameraRay = Camera.main.ScreenPointToRay(new Vector3(mousePos.x, Screen.height - mousePos.y, 0));
+            //RaycastHit hit;
+
+            //// If we hit an object
+            //if (Physics.Raycast(CameraRay, out hit, 10000))
+            //{
+            //    var transformHandle = hit.collider.gameObject.GetComponent<TransformHandle>();
+            //    // If we hit a new selectable object
+            //    if (transformHandle != null && transformHandle != _selectedTransformHandle)
+            //    {
+            //        if (hit.collider.gameObject.GetComponent<CutObject>().Display){
+            //            if (_selectedTransformHandle != null)
+            //            {
+            //                //Debug.Log("Reset");
+            //                _selectedTransformHandle.Disable();
+            //            }
+            //            //Debug.Log("Selected transform: " + transformHandle.gameObject.name);
+            //            transformHandle.Enable();
+            //            transformHandle.SetSelectionState(_currentState);
+            //            _selectedTransformHandle = transformHandle;
+            //            handleMode = true;
+            //        }
+            //        else {
+            //            render._mousePos = mousePos;
+            //            render._rightMouseDown = true;
+            //        }
+            //    }
+            //    // If we hit a non-selectable object
+            //    else if (transformHandle == null && _selectedTransformHandle != null)
+            //    {
+            //        //Debug.Log("Reset");
+            //        _selectedTransformHandle.Disable();
+            //        _selectedTransformHandle = null;
+            //        handleMode=false;
+            //    }
+            //    else {
+            //        render._mousePos = mousePos;
+            //        render._rightMouseDown = true;
+            //    }
+            //}
+            //// If we miss a hit
+            //else if (_selectedTransformHandle != null)
+            //{
+            //    //Debug.Log("Reset");
+            //    _selectedTransformHandle.Disable();
+            //    _selectedTransformHandle = null;
+            //    handleMode=false;
+            //    //check if hit a  protein
+            //    render._mousePos = mousePos;
+
+            //    render._rightMouseDown = true;
+            //}
+            //else {
+            //    render._mousePos = mousePos;
+            //    render._rightMouseDown = true;
+            //}
         }
 
         if (Event.current.keyCode == KeyCode.Alpha1)

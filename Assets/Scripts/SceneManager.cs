@@ -55,7 +55,8 @@ public class SceneManager : MonoBehaviour
 	public JSONNode AllIngredients;
 	public JSONNode AllRecipes;
 	public int sceneid=0;
-    // Curve ingredients data
+	public string scene_name;
+	// Curve ingredients data
     
     public List<int> CurveIngredientsAtomStart = new List<int>();
     public List<int> CurveIngredientsAtomCount = new List<int>();
@@ -143,6 +144,38 @@ public class SceneManager : MonoBehaviour
 		//gameObject.transform.parent = GameObject.Find ("CanvasGeneral").transform;
 		//gameObject.transform.rotation = Quaternion.AngleAxis (-90, Vector3.forward);
     }
+
+	public void AddRecipeIngredientsGameObject(JSONNode recipeData,GameObject parent){
+		for (int j = 0; j < recipeData["ingredients"].Count; j++)
+		{
+			var jitem = new GameObject(recipeData["ingredients"][j]["name"]);
+			jitem.transform.parent=parent.transform;
+		}
+	}
+
+	public void buildHierarchy(JSONNode resultData){
+		scene_name = resultData ["recipe"] ["name"];
+		var root = new GameObject(resultData["recipe"]["name"]);//in case we want to have more than one recipe loaded
+		//create empty null object or sphere ?
+		if (resultData["cytoplasme"] != null)
+		{
+			var cyto = new GameObject("cytoplasme");
+			cyto.transform.parent = root.transform;
+			AddRecipeIngredientsGameObject(resultData["cytoplasme"], cyto);
+		}
+		
+		for (int i = 0; i < resultData["compartments"].Count; i++)
+		{
+			var comp = new GameObject(resultData["compartments"].GetKey(i));
+			comp.transform.parent = root.transform;
+			var surface = new GameObject("surface"+ i.ToString());
+			surface.transform.parent = comp.transform;
+			AddRecipeIngredientsGameObject(resultData["compartments"][i]["interior"],surface);
+			var interior = new GameObject("interior"+ i.ToString());
+			interior.transform.parent = comp.transform;
+			AddRecipeIngredientsGameObject(resultData["compartments"][i]["surface"], interior);
+		}
+	}
 
 	void DoBrownianMotion()
 	{
@@ -484,13 +517,8 @@ public class SceneManager : MonoBehaviour
 			{
 				//Debug.Log("Update state");
 				ProteinInstanceInfos[elementId] = new Vector4(ProteinInstanceInfos[elementId].x, (int)InstanceState.Highlighted, ProteinInstanceInfos[elementId].z);
-				for (int i=0;i<ProteinInstanceInfos.Count;i++){
-					if (i==elementId) continue;
-					ProteinInstanceInfos[i] = new Vector4(ProteinInstanceInfos[i].x, (int)InstanceState.Luminance, ProteinInstanceInfos[i].z);
-				}
-				//zoom to the selected object
-				int proteinId = (int)ProteinInstanceInfos[elementId].x;
-				Helper.FocusCameraOnGameObject(Camera.main,ProteinInstancePositions[elementId],ProteinBoundingSpheres[proteinId],ProteinNames[proteinId]);
+                            
+                
 				//set cut object of the selection to apply on everything except selection
 
 			}
@@ -498,6 +526,19 @@ public class SceneManager : MonoBehaviour
 			SelectedElement = elementId;
 			ComputeBufferManager.Instance.ProteinInstanceInfos.SetData(ProteinInstanceInfos.ToArray());
 		}
+
+        if (SelectedElement == elementId && elementId > 0 && Camera.main != null && Camera.main.GetComponent<NavigateCamera>().hardFocusFlag)
+        {
+            for (int i = 0; i < ProteinInstanceInfos.Count; i++)
+            {
+                if (i == elementId) continue;
+                ProteinInstanceInfos[i] = new Vector4(ProteinInstanceInfos[i].x, (int)InstanceState.Luminance, ProteinInstanceInfos[i].z);
+            }
+            //zoom to the selected object
+            int proteinId = (int)ProteinInstanceInfos[elementId].x;
+            Helper.FocusCameraOnGameObject(Camera.main, ProteinInstancePositions[elementId], ProteinBoundingSpheres[proteinId], ProteinNames[proteinId]);
+            ComputeBufferManager.Instance.ProteinInstanceInfos.SetData(ProteinInstanceInfos.ToArray());
+        }  
 	}
 
     private void OnUnityReload()

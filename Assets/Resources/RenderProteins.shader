@@ -7,6 +7,7 @@ Shader "Custom/RenderProteins"
 	
 	#define MAX_SUBINSTANCE_SIZE 4096
 
+	uniform float _NearCullPlane;
 	uniform float _Scale;	
 	uniform int _EnableLod;
 	uniform float3 _CameraForward;	
@@ -136,11 +137,18 @@ Shader "Custom/RenderProteins"
 	[maxvertexcount(3)]
 	void gs_protein(point gs_input input[1], inout TriangleStream<fs_input> triangleStream)
 	{
+		
+
+
 		// Discard unwanted atoms
 		if( input[0].radius <= 0 ) return;
 
 		float4 viewPos = mul(UNITY_MATRIX_MV, float4(input[0].pos, 1));
-		viewPos -= normalize( viewPos ) * input[0].radius;
+
+			if (abs(viewPos.z) < _NearCullPlane && input[0].state != 1) return;
+			
+			
+			viewPos -= normalize( viewPos ) * input[0].radius;
 		float4 projPos = mul(UNITY_MATRIX_P, float4(viewPos.xyz, 1));
 		float4 offset = mul(UNITY_MATRIX_P, float4(input[0].radius, input[0].radius, 0, 0));
 

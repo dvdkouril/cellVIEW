@@ -18,9 +18,12 @@ public class RecipeTreeUI : MonoBehaviour {
 	private bool doubleclick;
 	private bool toggle_display_on_double_click = false;
 	private int clikCount;
+	private bool mouseintree;
+	private NavigateCamera nvcamera;
 	// Use this for initialization
 	public void Awake(){
 		_sel = GameObject.Find ("_Selection").GetComponent<HandleSelection>();
+		nvcamera = Camera.main.GetComponent<NavigateCamera> ();
 	}
 
 
@@ -47,6 +50,9 @@ public class RecipeTreeUI : MonoBehaviour {
 
 
 	public void OnGUI(){
+		mouseintree = m_myTreeView.HasFocus (Event.current.mousePosition);
+		nvcamera.lockInteractions = mouseintree&m_myTreeView.DisplayOnGame;
+		//if mouse contains lock the navigation
 		bool test = DoubleClick ();
 		if (clikCount > 1)
 			doubleclick = true;
@@ -152,10 +158,13 @@ public class RecipeTreeUI : MonoBehaviour {
 				}
 
 				if ((doubleclick)) {
+					bool filter_cut_old = filter_cut;
+					filter_cut=false;
 					ApplyFunctionRecValue (toggleChecked, m_myTreeView.RootItem, toggle_display_on_double_click);
 					ApplyFunctionRecValue (toggleChecked, item, true);
 					toggle_display_on_double_click = !toggle_display_on_double_click;
 					update = true;
+					filter_cut = filter_cut_old;
 				}
 
 				ComputeBufferManager.Instance.ProteinInstanceInfos.SetData(SceneManager.Instance.ProteinInstanceInfos.ToArray());
@@ -315,6 +324,54 @@ public class RecipeTreeUI : MonoBehaviour {
 				i+=1;
 			}
 		
+		}
+	}
+	public void addIngredientsItemGameObject(Transform recipeData,TreeViewItem parent){
+		for (int j = 0; j < recipeData.childCount; j++)
+		{
+			TreeViewItem jitem =  parent.AddItem(recipeData.GetChild(j).name,true,true);
+			AddEvents(jitem);
+			jitem.anid=anid;
+			anid+=1;
+		}
+	}
+	
+	public void populateRecipeGameObject(GameObject hierachy){
+		ClearTree ();
+		anid = 0;
+		var item = m_myTreeView;
+		item.Width = 250;
+		item.Height = 500;
+		Debug.Log (hierachy.name);
+		item.Header = hierachy.name;
+		AddEvents(item.RootItem);
+		//int anid = 0;
+		int i = 0;
+		foreach (Transform child in hierachy.transform) {
+			if (string.Equals(child.name,"cytoplasme")){
+				TreeViewItem item1 = item.RootItem.AddItem("cytoplasme",true,true);
+				AddEvents(item1);
+				addIngredientsItemGameObject(child,item1);
+			}
+			else {
+				//should have two child
+				TreeViewItem comp = item.RootItem.AddItem(child.name,true,true);
+				AddEvents(comp);
+				if (child.childCount!= 0){
+					if (child.GetChild(0).childCount!= 0) {
+						TreeViewItem interior = comp.AddItem("interior"+ i.ToString(),true,true);
+						AddEvents(interior);
+						addIngredientsItemGameObject(child.GetChild(0),interior);
+					}
+					if (child.GetChild(1).childCount != 0) {
+						TreeViewItem surface = comp.AddItem("surface"+ i.ToString(),true,true);
+						AddEvents(surface);
+						addIngredientsItemGameObject(child.GetChild(1),surface);
+					}
+				}
+				i+=1;
+			}
+			
 		}
 	}
 }

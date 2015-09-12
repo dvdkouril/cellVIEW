@@ -33,7 +33,7 @@ public class UImanager : MonoBehaviour {
 	public float speed;
 	public GameObject progressBar;
 	public RectTransform treeviewHolder;
-
+	public RectTransform toolBarRect;
 	public SSAOPro ssao1;
 	public SSAOPro ssao2;
 
@@ -54,7 +54,11 @@ public class UImanager : MonoBehaviour {
 	private int current_cross=-1;
 	private int current_panel=-1;
 	private Sprite[] sprites;
-	
+	private bool cross_advmode = false; // advanced mode for cross section in UI
+
+	public GameObject helpPanel;
+	public Tutorial tuto;
+
 	void  gatherRecipes(){
 		if (AllRecipes == null) 
 			AllRecipes = Helper.GetAllRecipeInfo ();
@@ -93,7 +97,8 @@ public class UImanager : MonoBehaviour {
 			nvcamera = Camera.main.GetComponent<NavigateCamera> ();
 	}
 
-	void Start(){
+	void Start()
+    {
 		if (nvcamera == null)
 			nvcamera = Camera.main.GetComponent<NavigateCamera> ();
 	}
@@ -133,7 +138,12 @@ public class UImanager : MonoBehaviour {
 		toggleCuteObjectSelected (true);
 	}
 
-	public void toggleDisplayCutObj(bool value) {
+    public void toggleHelpPanel(bool value)
+    {
+		helpPanel.SetActive (value);
+    }
+
+    public void toggleDisplayCutObj(bool value) {
 		SceneManager.Instance.CutObjects [current_cross].Display = value;
 	}
 	
@@ -143,17 +153,28 @@ public class UImanager : MonoBehaviour {
 			SceneManager.Instance.CutObjects [i].Display = value;
 		} 
 	}
-	
+
+	public void toggleCrossMode(bool value){
+		cross_advmode = value;
+	}
+
 	public void toggleDisplayTreeCutObj(bool value) {
-		Debug.Log (current_cross.ToString ());
-		if (current_cross!=-1)SceneManager.Instance.CutObjects [current_cross].toggleTree(value);
-		_treeVisible = value;
+		if (cross_advmode) {
+			Debug.Log (current_cross.ToString ());
+			if (current_cross != -1)
+				SceneManager.Instance.CutObjects [current_cross].toggleTree (value);
+			_treeVisible = value;
+		}
 	}
 	
-	public void toggleDescription(bool val){
+	public void toggleDescription(bool val)
+    {
 		if (_sel != null)
 			_sel.cgroup.alpha = (float)Convert.ToInt32(val);
-	}
+
+	    
+    }
+
 	public void initProgressBar(){
 		if (progressLabel == null) {
 			progressLabel = progressBar.GetComponentInChildren<Text> ();
@@ -245,15 +266,15 @@ public class UImanager : MonoBehaviour {
 			//add a TreeView + parameter
 		}
 		if (buttonName == "start") {
-			//load HIV+Blood
-			//SceneManager.Instance.ClearScene();
+			//start the app
 			SceneManager.Instance.AllRecipes = AllRecipes;
 			//SceneManager.Instance.sceneid = 3;//hiv+blood
 			//Debug.Log(SceneManager.Instance.sceneid.ToString());
 			CellPackLoader.UI_manager = this;
-			CellPackLoader.LoadCellPackResults(false);
+			//CellPackLoader.LoadCellPackResults(false);
 			if (recipe_ingredient_ui!= null){
-				recipe_ingredient_ui.populateRecipeJson (CellPackLoader.resultData);
+				recipe_ingredient_ui.populateRecipeGameObject (GameObject.Find (SceneManager.Instance.scene_name));
+				//recipe_ingredient_ui.populateRecipeJson (CellPackLoader.resultData);
 				//recipe_ingredient_ui.populateRecipe (PersistantSettings.Instance.hierarchy);
 			}
 			started = true;
@@ -373,8 +394,19 @@ public class UImanager : MonoBehaviour {
 	public void toggleSSAO2(bool value){
 		ssao2.enabled = value;
 	}
+
+	public void toggleBrownianMotion(bool value){
+		PersistantSettings.Instance.EnableBrownianMotion = value;
+	}
+
 	// Update is called once per frame
 	void OnGUI (){
+		//check if mouse in the toolbar or the tutorial if actif
+		if ((toolBarRect.rect.Contains (Event.current.mousePosition))||(tuto.tutoRect.rect.Contains (Event.current.mousePosition))) {
+			nvcamera.lockInteractions = true;
+		} else {
+			nvcamera.lockInteractions = false;
+		}
 		if (crossmode == null)
 			return;
 		if (Event.current.keyCode == KeyCode.Alpha1)
@@ -395,7 +427,12 @@ public class UImanager : MonoBehaviour {
 			crossmode.NotifyToggleOn(toggles_handle[2]);
 		}
 	}
-	void Update () {
+	void Update () 
+    {
+
+        nvcamera.lockInteractions = helpPanel.active ;
+		//lock if the mouse is in the toolbar?
+
 		//TODO make possible to change the width of the panel  in game mode
 		//update the treeView size according the panel size
 		//or the other way around
@@ -421,34 +458,37 @@ public class UImanager : MonoBehaviour {
 			}
 		}
 		//update the ListBOx of cutting object
-		if ((cuteObject.optionInts.Length != SceneManager.Instance.CutObjects.Count-1)&&(SceneManager.Instance.CutObjects.Count>1)) {
-			cuteObject.optionInts=new int[SceneManager.Instance.CutObjects.Count-1];
-			cuteObject.optionStrings=new string[SceneManager.Instance.CutObjects.Count-1];
-			cuteObject.optionSprites=new Sprite[SceneManager.Instance.CutObjects.Count-1];
+		if (cross_advmode) {
+			if ((cuteObject.optionInts.Length != SceneManager.Instance.CutObjects.Count) && (SceneManager.Instance.CutObjects.Count > 0)) {
+				cuteObject.optionInts = new int[SceneManager.Instance.CutObjects.Count];
+				cuteObject.optionStrings = new string[SceneManager.Instance.CutObjects.Count];
+				cuteObject.optionSprites = new Sprite[SceneManager.Instance.CutObjects.Count];
 
-			for (int i = 1; i < SceneManager.Instance.CutObjects.Count;i++){
-				//if (SceneManager.Instance.CutObjects[i].gameObject.name == "CutSelection") continue;
-				cuteObject.optionInts[i-1]=i-1;
-				cuteObject.optionStrings[i-1]=SceneManager.Instance.CutObjects[i].gameObject.name;
-				cuteObject.optionSprites[i-1]=cuteObjectType.optionSprites[(int)SceneManager.Instance.CutObjects[i].CutType];
+				for (int i = 0; i < SceneManager.Instance.CutObjects.Count; i++) {
+					//if (SceneManager.Instance.CutObjects[i].gameObject.name == "CutSelection") continue;
+					cuteObject.optionInts [i] = i;
+					cuteObject.optionStrings [i] = SceneManager.Instance.CutObjects [i].gameObject.name;
+					cuteObject.optionSprites [i] = cuteObjectType.optionSprites [(int)SceneManager.Instance.CutObjects [i].CutType];
+				}
+			}
+			if (cuteObject.valueInt != current_cross) {
+				//update or use on ValueChanged
+				//do something
+				current_cross = cuteObject.valueInt + 1;
+				//display the object tree. should we attach the tree to the gameObjectCutPlan ? and just display it
+			}
+			if ((current_cross < SceneManager.Instance.CutObjects.Count) && (current_cross != -1)) {
+				if (SceneManager.Instance.CutObjects [current_cross].tree_isVisible)
+					SceneManager.Instance.CutObjects [current_cross].showTree (treeviewHolder.position, treeviewHolder.rect.size);
+			}
+			//check if current selected cutObjecy different from the active one in the menu
+			if (nvcamera._selectedTransformHandle != null) {
+				if (nvcamera._selectedTransformHandle.cutobject.name!=cuteObject.valueString){
+					cuteObject.SetValue(nvcamera._selectedTransformHandle.cutobject.tagid-1);
+				}
 			}
 		}
-		if (cuteObject.valueInt-1 != current_cross) {
-			//update or use on ValueChanged
-			//do something
-			current_cross = cuteObject.valueInt+1;
-			//display the object tree. should we attach the tree to the gameObjectCutPlan ? and just display it
-		}
-		if ((current_cross < SceneManager.Instance.CutObjects.Count)&&(current_cross!=-1)) {
-			if (SceneManager.Instance.CutObjects [current_cross].tree_isVisible)
-				SceneManager.Instance.CutObjects [current_cross].showTree (treeviewHolder.position, treeviewHolder.rect.size);
-		}
-		//check if current selected cutObjecy different from the active one in the menu
-		if (nvcamera._selectedTransformHandle != null) {
-			if (nvcamera._selectedTransformHandle.cutobject.name!=cuteObject.valueString){
-				cuteObject.SetValue(nvcamera._selectedTransformHandle.cutobject.tagid-1);
-			}
-		}
+
 		if (!started)
 			recipe_ingredient_ui.m_myTreeView.toggleInGame (false);
 	}

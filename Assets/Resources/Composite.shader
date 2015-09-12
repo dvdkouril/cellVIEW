@@ -122,29 +122,34 @@
 				{
 					float4 proteinInfo = _ProteinInstanceInfo[id];					
 					float4 proteinColor = _ProteinColors[proteinInfo.x];
-					float4 highlight = float4(HighlightColor(proteinColor),1);
 					//float4 lowlight = float4(float3(dot( proteinColor.rgb, float3(0.22, 0.707, 0.071))),1);
-					if (proteinInfo.y == 0) {
-						color =float4(ColorCorrection(proteinColor.xyz), 1);
+					if (proteinInfo.y == 0)
+					{
+						color = float4(ColorCorrection(proteinColor.xyz), 1);
 					}
-					else if (proteinInfo.y == 1) {
-						color = highlight;
+					else if (proteinInfo.y == 1) 
+					{
+						color = float4(HighlightColor(proteinColor), 1);
 					}
-					else if (proteinInfo.y == 3) {
-						float f = 0.2;
-						float r = proteinColor.r;
-						float g = proteinColor.g;
-						float b = proteinColor.b;
-						//float3 lum = float3(r*0.22,g*0.707,b*0.071);//0.3,0.6,0.1?
-						float lum = dot( proteinColor.rgb, float3(0.22, 0.707, 0.071));
-						color = proteinColor*f+float4(lum,lum,lum,1);
-						//float lum = dot( proteinColor.rgb, float3(0.1, 0.5, 0.07));//
-						//float lum = dot( proteinColor.rgb, float3(0.22, 0.707, 0.071));//0.3,0.6,0.1?
-						//color = float4(lum,lum,lum,1);
+					else 
+					{
+						color = float4(DesaturateColor(proteinColor), 1);
 					}
-					else {
-						color  =float4(ColorCorrection(proteinColor.xyz), 1);
-					}
+					//else if (proteinInfo.y == 3) {
+					//	float f = 0.2;
+					//	float r = proteinColor.r;
+					//	float g = proteinColor.g;
+					//	float b = proteinColor.b;
+					//	//float3 lum = float3(r*0.22,g*0.707,b*0.071);//0.3,0.6,0.1?
+					//	float lum = dot( proteinColor.rgb, float3(0.22, 0.707, 0.071));
+					//	color = proteinColor*f+float4(lum,lum,lum,1);
+					//	//float lum = dot( proteinColor.rgb, float3(0.1, 0.5, 0.07));//
+					//	//float lum = dot( proteinColor.rgb, float3(0.22, 0.707, 0.071));//0.3,0.6,0.1?
+					//	//color = float4(lum,lum,lum,1);
+					//}
+					//else {
+					//	color  =float4(ColorCorrection(proteinColor.xyz), 1);
+					//}
 					//color = (proteinInfo.y == 0) ? float4(ColorCorrection(proteinColor.xyz), 1) : highlight;
 					//color = float4(ColorCorrection(proteinColor.xyz), 1);
 				}

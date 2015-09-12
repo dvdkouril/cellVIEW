@@ -1,9 +1,14 @@
 fileFormatVersion: 2
 guid: 2fead86cd9a217b4695277ad21b63e21
-timeCreated: 1441730021
+timeCreated: 1442003926
 licenseType: Free
 TextureImporter:
-  fileIDToRecycleName: {}
+  fileIDToRecycleName:
+    21300000: mouse_ctrl_0
+    21300002: mouse_ctrl_1
+    21300004: mouse_ctrl_2
+    21300006: mouse_ctrl_3
+    21300008: mouse_ctrl_4
   serializedVersion: 2
   mipmaps:
     mipMapMode: 0
@@ -37,7 +42,7 @@ TextureImporter:
   lightmap: 0
   rGBM: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -48,7 +53,57 @@ TextureImporter:
   textureType: 8
   buildTargetSettings: []
   spriteSheet:
-    sprites: []
+    sprites:
+    - name: mouse_ctrl_0
+      rect:
+        serializedVersion: 2
+        x: 19
+        y: 48
+        width: 297
+        height: 304
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: mouse_ctrl_1
+      rect:
+        serializedVersion: 2
+        x: 348
+        y: 46
+        width: 181
+        height: 304
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: mouse_ctrl_2
+      rect:
+        serializedVersion: 2
+        x: 552
+        y: 46
+        width: 181
+        height: 304
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: mouse_ctrl_3
+      rect:
+        serializedVersion: 2
+        x: 759
+        y: 46
+        width: 182
+        height: 325
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+    - name: mouse_ctrl_4
+      rect:
+        serializedVersion: 2
+        x: 967
+        y: 46
+        width: 181
+        height: 304
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
   spritePackingTag: 
   userData: 
   assetBundleName: 

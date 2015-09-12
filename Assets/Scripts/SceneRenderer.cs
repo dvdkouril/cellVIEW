@@ -136,6 +136,7 @@ public class SceneRenderer : MonoBehaviour
         _renderProteinsMaterial.SetFloat("_Scale", PersistantSettings.Instance.Scale);
         _renderProteinsMaterial.SetFloat("_FirstLevelBeingRange", PersistantSettings.Instance.FirstLevelOffset);
         _renderProteinsMaterial.SetVector("_CameraForward", _camera.transform.forward);
+        _renderProteinsMaterial.SetFloat("_NearCullPlane", PersistantSettings.Instance.NearCullPlane);
 
         _renderProteinsMaterial.SetBuffer("_LodLevelsInfos", ComputeBufferManager.Instance.LodInfos);
         _renderProteinsMaterial.SetBuffer("_ProteinInstanceInfo", ComputeBufferManager.Instance.ProteinInstanceInfos);

@@ -89,8 +89,9 @@ public class CutObject : MonoBehaviour
     void Awake()
     {
         Debug.Log("Init cut object");
-        ProteinCutFilters.Clear();
-        SetCutItems(SceneManager.Instance.ProteinNames);
+		if (ProteinCutFilters.Count == 0)
+        //ProteinCutFilters.Clear();//?maybe shouldnt clear on Awake ?
+        	SetCutItems(SceneManager.Instance.ProteinNames);
 		_tree = GetComponent<TreeViewControl> ();
 		_tree_ui = GetComponent<RecipeTreeUI> ();
 	}
@@ -139,8 +140,12 @@ public class CutObject : MonoBehaviour
 
 	public void setTree(){
 		_tree_ui.ClearTree ();
-		if (CellPackLoader.resultData != null)
-			_tree_ui.populateRecipeJson (CellPackLoader.resultData);
+		GameObject root = GameObject.Find (SceneManager.Instance.scene_name);
+		if (root != null) {
+			_tree_ui.populateRecipeGameObject (root);
+		}
+		//if (CellPackLoader.resultData != null)
+			//_tree_ui.populateRecipeJson (CellPackLoader.resultData);
 			//_tree_ui.populateRecipe (PersistantSettings.Instance.hierarchy);
 		else {
 			Debug.Log ("cellPackResult not availble");

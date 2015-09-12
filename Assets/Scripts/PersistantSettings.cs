@@ -7,6 +7,9 @@ using SimpleJSON;
 [ExecuteInEditMode]
 public class PersistantSettings : MonoBehaviour
 {
+    [NonSerialized]
+    public float NearCullPlane = 0;
+
     public string LastSceneLoaded;
 
     // Base settings
@@ -108,4 +111,6 @@ public class PersistantSettings : MonoBehaviour
 			}
 		}
 	}
+
+    
 }

@@ -73,6 +73,16 @@ float3 OffsetHSV(float3 color, float3 offset)
 		
 //--------------------------------------------------------------------------------------
 
+float3 DesaturateColor(float3 color)
+{
+	float3 c = RGBtoHSL(color);
+
+	c.z = 0.25;
+	c.y = 0.5;
+
+	return 	HSLtoRGB(c);
+}
+
 float3 ColorCorrection(float3 color)
 {
 	float3 c = RGBtoHSL(color);		

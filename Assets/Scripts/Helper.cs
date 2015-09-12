@@ -519,26 +519,36 @@ public static class Helper
 		
 		return fileName;
 	}
-	public static void FocusCameraOnGameObject(Camera c, Vector4 center, float radius, string ingname) {
-		//Bounds b = CalculateBounds(go);
-		//Vector3 max = b.size;
-		//float radius = Mathf.Max(max.x, Mathf.Max(max.y, max.z));
-		NavigateCamera nc = c.GetComponent<NavigateCamera> ();
+
+	public static void FocusCameraOnGameObject(Camera c, Vector4 center, float radius, string ingname)
+    {
+        //Bounds b = CalculateBounds(go);
+        //Vector3 max = b.size;
+        //float radius = Mathf.Max(max.x, Mathf.Max(max.y, max.z));
+
+        NavigateCamera nc = c.GetComponent<NavigateCamera> ();
 		Vector3 ce = new Vector3 (center.x, center.y, center.z) * PersistantSettings.Instance.Scale; 
 		float dist = radius / (Mathf.Sin (c.fieldOfView * Mathf.Deg2Rad / 2f));
 		Debug.Log ("Radius = " + radius * PersistantSettings.Instance.Scale + " dist = " + dist * PersistantSettings.Instance.Scale);
-		//Vector3 pos = UnityEngine.Random.onUnitSphere * dist + center;
-		//c.transform.position = pos;
-		//c.transform.LookAt(center);
-		//Ray r = new Ray(center,center-c.transform.position);
-		//c.transform.position = r.GetPoint (dist);
-		Vector3 direction = c.transform.position - ce;
-		nc.DampTargetPosition = ce - c.transform.forward * (radius * 2.0f) * PersistantSettings.Instance.Scale;
+        
+        //Vector3 pos = UnityEngine.Random.onUnitSphere * dist + center;
+        //c.transform.position = pos;
+        //c.transform.LookAt(center);
+        //Ray r = new Ray(center,center-c.transform.position);
+        //c.transform.position = r.GetPoint (dist);
+
+        Vector3 direction = c.transform.position - ce;
+        nc.StoredPosition = c.transform.position;
+        nc.DampTargetPosition = ce - c.transform.forward * (radius * 2.5f) * PersistantSettings.Instance.Scale;
 		nc.TargetPosition = ce;
-		nc.Distance = (radius * 2.0f) * PersistantSettings.Instance.Scale;
-		//c.nearClipPlane = (radius) * PersistantSettings.Instance.Scale;
-		//c.transform.position = ce - c.transform.forward * radius/2.0f;
-		GameObject.Find ("_Selection").transform.position = ce;//*PersistantSettings.Instance.Scale;
+		//nc.Distance = (radius * 2.0f) * PersistantSettings.Instance.Scale;
+        nc.animateCameraIn = true;
+        
+        PersistantSettings.Instance.NearCullPlane =  Vector3.Distance(nc.DampTargetPosition, nc.TargetPosition);
+
+        //c.transform.position = ce - c.transform.forward * radius/2.0f;
+
+        GameObject.Find ("_Selection").transform.position = ce;//*PersistantSettings.Instance.Scale;
 		CutObject cut = GameObject.Find ("_Selection").GetComponentInChildren<CutObject> ();
 		cut.transform.localScale = Vector3.one*radius * 5.0f* PersistantSettings.Instance.Scale;
 		cut.ProteinCutFilters.Clear();

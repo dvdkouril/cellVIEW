@@ -283,7 +283,7 @@ public class TreeViewControl : MonoBehaviour
                 break;
             case TreeViewControl.DisplayTypes.USE_SCROLL_AREA:
                 GUILayout.BeginArea(new Rect(X, Y, Width, Height));
-                m_scrollView = GUILayout.BeginScrollView(m_scrollView, GUILayout.MaxWidth(Width), GUILayout.MaxHeight(Height));
+				m_scrollView = GUILayout.BeginScrollView(m_scrollView, GUIStyle.none,GUIStyle.none,GUILayout.MaxWidth(Width), GUILayout.MaxHeight(Height));
                 break;
         }
 
@@ -305,9 +305,9 @@ public class TreeViewControl : MonoBehaviour
 
     public bool HasFocus(Vector2 mousePos)
     {
-        Rect rect = new Rect(m_scrollView.x, m_scrollView.y, Width, Height);
+        Rect rect = new Rect(m_scrollView.x-30, m_scrollView.y-30, Width+60, Height+60);
         return rect.Contains(mousePos);
-    }
+    }	
 
     void Start()
     {
