@@ -72,7 +72,8 @@ public class NavigateCamera : MonoBehaviour
             lockInteractions = true;
 
             //TargetPosition=DampTargetPosition;
-
+			float d = Vector3.Distance(transform.position,TargetPosition);
+			PersistantSettings.Instance.SpeedFactor = (d*2.0f)/320.0f;
             if (Vector3.Distance(transform.position, DampTargetPosition) < 1.0f)
             {
                 transform.position = Vector3.SmoothDamp(transform.position, DampTargetPosition, ref velocity, smoothTime * 5);
@@ -82,7 +83,7 @@ public class NavigateCamera : MonoBehaviour
                 transform.position = Vector3.SmoothDamp(transform.position, DampTargetPosition, ref velocity, smoothTime);
             }
 
-            if (Vector3.Distance(transform.position, DampTargetPosition) < 0.1f)
+            if (Vector3.Distance(transform.position, DampTargetPosition) < 0.2f)
             {
                 animateCameraIn = false;
                 lockInteractions = false;
@@ -108,7 +109,10 @@ public class NavigateCamera : MonoBehaviour
             //transform.rotation = rotation;
             //transform.position = position;
 
-            if (Vector3.Distance(transform.position, StoredPosition) < 1.0f)
+			float d = Vector3.Distance(transform.position,TargetPosition);
+			PersistantSettings.Instance.SpeedFactor = (d*2.0f)/320.0f;
+
+			if (Vector3.Distance(transform.position, StoredPosition) < 1.0f)
             {
                 transform.position = Vector3.SmoothDamp(transform.position, StoredPosition, ref velocity, smoothTime * 5);
             }
@@ -117,11 +121,12 @@ public class NavigateCamera : MonoBehaviour
                 transform.position = Vector3.SmoothDamp(transform.position, StoredPosition, ref velocity, smoothTime);
             }
 
-            if (Vector3.Distance(transform.position, StoredPosition) < 0.1f)
+            if (Vector3.Distance(transform.position, StoredPosition) < 0.25f)
             {
                 animateCameraOut = false;
                 lockInteractions = false;
                 //freeMoveMode = true;
+				//PersistantSettings.Instance.SpeedFactor = 2.0f;
             }
         }
 
