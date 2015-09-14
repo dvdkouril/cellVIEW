@@ -3,7 +3,7 @@
 
 How to:
 
-The HIV + Blood plasma dataset has alredy been baked and can be loaded by simply loading the scene located in the scenes folder.
+The HIV + Blood plasma dataset has already been baked and can be loaded by simply loading the scene located in the scenes folder.
 It is also possible to bake a scene based on cellPACK results files, however, a powerful GPU is prefered for this option.
 
 Prerequisite to build a scene:
