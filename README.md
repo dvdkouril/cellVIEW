@@ -1,8 +1,10 @@
 # cellVIEW
 
-This software is the result of the effort the illvisation team to enable real-time visualization of large molecular scenes.
-Details about the techniques and also the internals of the tool can be found here: http://onlinelibrary.wiley.com/doi/10.1111/cgf.12370/pdf
-and here: http://diglib.eg.org/handle/10.2312/vcbm20151209
+This software is the result of the effort the Illvisation research project at TU Wien (https://www.cg.tuwien.ac.at/research/projects/illvisation/)
+and the Molecular Graphics Laboratory at Scripps (http://mgl.scripps.edu/) to enable real-time visualization of large molecular scenes. 
+Details about the techniques and also the internals of the tool can be found in a EG VCBM 2015 paper (http://onlinelibrary.wiley.com/doi/10.1111/cgf.12370/pdf)
+also available at Eurographics Digital Library (http://diglib.eg.org/handle/10.2312/vcbm20151209).
+Please use this work as reference in scientific publications that use existing functionality or build on the top of the cellVIEW code-base. 
 
 How to:
 
@@ -13,6 +15,7 @@ Prerequisite to build a scene:
 
 In order to be able to load a scene it is necessary to add/modify the TdrDelay key from the windows registery.
 This value correspond to the timeout value after which the GPU driver will restart when the GPU is busy.
-By default this value is set to 2 seconds on Windows, and should be changed to order to allow more computing time for the loading, a value of 20/30 seconds is enough on most decents graphics hardware.
+By default this value is set to 2 seconds on Windows, and should be changed to order to allow more computing time for the loading,
+a value of 20/30 seconds is enough on most decents graphics hardware.
 
 
