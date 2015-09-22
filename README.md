@@ -1,5 +1,10 @@
 # cellVIEW
 
+This software is the result of the effort the illvisation project to allow real-time visualization of large molecular scenes.
+Details about the techniques and also the internals of the tool can be found here:
+http://onlinelibrary.wiley.com/doi/10.1111/cgf.12370/pdf
+and here:
+http://diglib.eg.org/handle/10.2312/vcbm20151209
 
 How to:
 
