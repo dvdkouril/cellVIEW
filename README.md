@@ -25,6 +25,9 @@ time for the loading, a value of 20/30 seconds is enough on most decents graphic
 
 
 [1] https://www.cg.tuwien.ac.at/research/projects/illvisation/
+
 [2] http://mgl.scripps.edu/
+
 [3] http://onlinelibrary.wiley.com/doi/10.1111/cgf.12370/pdf
+
 [4] http://diglib.eg.org/handle/10.2312/vcbm20151209
