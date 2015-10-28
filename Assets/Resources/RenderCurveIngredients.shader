@@ -31,6 +31,52 @@
 	uniform float4 _FrustrumPlane_4; 
 	uniform float4 _FrustrumPlane_5; 
 
+	// Cutaways
+	uniform int _NumCutObjects;
+	uniform StructuredBuffer<float4> _CutInfos;	
+	uniform	StructuredBuffer<float4> _CutScales;
+	uniform	StructuredBuffer<float4> _CutPositions;	
+	uniform StructuredBuffer<float4> _CutRotations;
+	uniform StructuredBuffer<int> _ProteinCutFilters;
+
+	float CutAwayTest(float4 sphere, int proteinType)
+	{
+	    bool cut = false;
+	    for (int i = 0; i < _NumCutObjects; i++)
+	    {
+	        int proteinCutFilter = 1;//_ProteinCutFilters[proteinType * _NumCutObjects + i];
+
+	        if (proteinCutFilter == 1)//cutaway
+	        {
+	            float4 info = _CutInfos[i];
+	            float3 position = _CutPositions[i].xyz;
+	            float4 rotation = _CutRotations[i];
+				float3 scale = _CutScales[i].xyz; 
+	            //plane
+	            if (info.x == 0)
+	            {
+	                float3 normal = QuaternionTransform(rotation, float3(0, 1, 0));
+	                float4 plane = ComputePlane(normal, position);
+	                bool test = SpherePlaneTest(plane, float4(sphere.xyz, 0));
+	                if (test) return true;
+	            }
+				else if (info.x == 1)
+				{
+					bool test = SphereSphereTest(float4(position, scale.x * 0.5), float4(sphere.xyz, 0));
+					if (test) return true;
+				}
+				else if (info.x == 2)
+				{
+					bool test = SphereCubeTest(position, rotation, scale * 0.5, float4(sphere.xyz, 0));
+					if (test) return true;
+				}
+	        }        
+	    }
+
+	    return cut;
+	}
+
+
 	bool SphereFrustrumTest_2(float4 sphere)
 	{
 		bool inFrustrum = true;
@@ -103,7 +149,19 @@
 		output.numSteps = numSteps;	
 		output.curveType = curveType;	
 		output.twist = ingredientInfo.y;
-		output.color = ColorCorrection(ingredientColor);
+		if (info0.z == 0)
+		{
+			output.color = float4(ColorCorrection(ingredientColor), 1);
+		}
+		else if (info0.z == 1) 
+		{
+			output.color = float4(HighlightColor(ingredientColor), 1);
+		}
+		else 
+		{
+			output.color = float4(DesaturateColor(ingredientColor), 1);
+		}
+		//output.color = ColorCorrection(ingredientColor);
 		output.localSphereCount = (endCurve || frustrumTest || crossSection || toggleIngredient) ? 0 : _CurveIngredientsAtomCount[curveType];	
 		output.localSphereStart = _CurveIngredientsAtomStart[curveType];		
 		output.globalSphereCount = numSteps * output.localSphereCount;
@@ -354,7 +412,8 @@
 		if(input[0].radius <= 0) return;	
 		
 		float radius = input[0].radius;
-
+		//bool cutAwayTest = CutAwayTest(float4(input[0].position.xyz, 0), 1);
+		//if (cutAwayTest) return;
 		float4 viewPos = mul(UNITY_MATRIX_MV, float4(input[0].position, 1));
 		viewPos -= normalize( viewPos ) * input[0].radius;
 		float4 projPos = mul(UNITY_MATRIX_P, float4(viewPos.xyz, 1));
@@ -397,7 +456,7 @@
 		// Find depth
 		float eyeDepth = LinearEyeDepth(input.position.z) + input.radius * (1-normal.z);
 		depth = 1 / (eyeDepth * _ZBufferParams.z) - _ZBufferParams.w / _ZBufferParams.z;	
-		
+		//change depth to section if any ?
 		color = float4(input.color,0);
 		
 		id = -input.id;	

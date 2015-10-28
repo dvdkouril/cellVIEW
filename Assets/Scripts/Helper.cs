@@ -435,6 +435,20 @@ public static class Helper
 			File.WriteAllText (path, www.text);
 		}
 		var resultData = Helper.ParseJson(path);
+		//filter the name
+		for (int i=0; i<resultData.Count; i++) {
+			if (resultData[i]["file"].Value.Contains("HIV")){
+				string key = resultData.GetKey(i);
+				if (key.Contains("NC"))
+					resultData.ChangeKey(key,"HIV_"+key.Split('_')[1]+"_"+key.Split('_')[2]);
+				else if (key.Contains("P6_VPR"))
+					resultData.ChangeKey(key,"HIV_"+key.Split('_')[1]+"_"+key.Split('_')[2]);
+				else 
+					resultData.ChangeKey(key,"HIV_"+key.Split('_')[1]);
+				Debug.Log ("new key is "+"HIV_"+key.Split('_')[1]+" "+key);
+				//Debug.Log (key+" "+resultData[i]["file"]+" "+resultData.GetKey(i));
+			}
+		}
 		return resultData;
 	}
 	public static JSONNode GetAllRecipeInfo()
@@ -548,7 +562,8 @@ public static class Helper
 
         //c.transform.position = ce - c.transform.forward * radius/2.0f;
 
-        GameObject.Find ("_Selection").transform.position = ce;//*PersistantSettings.Instance.Scale;
+        /*
+         * GameObject.Find ("_Selection").transform.position = ce;//*PersistantSettings.Instance.Scale;
 		CutObject cut = GameObject.Find ("_Selection").GetComponentInChildren<CutObject> ();
 		cut.transform.localScale = Vector3.one*radius * 5.0f* PersistantSettings.Instance.Scale;
 		cut.ProteinCutFilters.Clear();
@@ -556,6 +571,72 @@ public static class Helper
 		cut.toggleCutItme(ingname,false);
 		cut.setTree();
 		SceneManager.Instance.ResetCutObjects ();
+		*/
+	}
+
+	public static float frac(float v)
+	{
+		return v - Mathf.Floor(v);
+	}
+
+	public static float hash(float n)
+	{
+		return frac(Mathf.Sin(n) * 43758.5453f);
+	}
+
+	public static Vector3 vector3Add(Vector3 avect, float anumber){
+		for (int i=0; i<3; i++) {
+			avect[i] = avect[i] + anumber;
+		}
+		return avect;
+	}
+
+	public static float noise_3D(Vector3 x)
+	{
+		// The noise function returns a value in the range -1.0f -> 1.0f
+		
+		Vector3 p = new Vector3 ( Mathf.Floor(x.x),Mathf.Floor(x.y),Mathf.Floor(x.z));
+		Vector3 f = new Vector3 ( frac(x.x),frac(x.y),frac(x.z));
+
+		for (int i=0; i<3; i++) {
+			f[i] = f[i] * f[i] * (3.0f - 2.0f * f[i]);
+		}
+		float n = p.x + p.y * 57.0f + 113.0f * p.z;
+		
+		return Mathf.Lerp(Mathf.Lerp(Mathf.Lerp(hash(n + 0.0f), hash(n + 1.0f), f.x),
+		                                 Mathf.Lerp(hash(n + 57.0f), hash(n + 58.0f), f.x), f.y),
+		                    Mathf.Lerp(Mathf.Lerp(hash(n + 113.0f), hash(n + 114.0f), f.x),
+		           Mathf.Lerp(hash(n + 170.0f), hash(n + 171.0f), f.x), f.y), f.z);
+	}
+		
+	public static Vector4 randomMove(Vector3 input_pos)
+	{
+
+		float _Time = Time.realtimeSinceStartup;
+		float speedFactor = PersistantSettings.Instance.SpeedFactor;// _SpeedFactor;
+		float translationScaleFactor = 5;//PersistantSettings.Instance.MoveFactor;
+		//float rotationScaleFactor = _RotateFactor;
+		
+		float randx = frac(Mathf.Sin(Vector2.Dot(new Vector2(1, input_pos.x), new Vector2(12.9898f, 78.233f))) * 43758.5453f);
+		float randy = frac(Mathf.Sin(Vector2.Dot(new Vector2(1, input_pos.y), new Vector2(12.9898f, 78.233f))) * 43758.5453f);
+		float randz = frac(Mathf.Sin(Vector2.Dot(new Vector2(1, input_pos.z), new Vector2(12.9898f, 78.233f))) * 43758.5453f);
+		
+		Vector4 tt = new Vector4(_Time / 20, _Time, _Time * 2, _Time * 3);
+		Vector3 ttxyz = new Vector3 (tt.x, tt.y, tt.z);
+		Vector3 ttyzx = new Vector3 (tt.y, tt.z, tt.x);
+		Vector3 ttzxy = new Vector3 (tt.z, tt.x, tt.y);
+
+		Vector3 posyzx = new Vector3 (input_pos.y, input_pos.z, input_pos.x);
+		Vector3 poszxy = new Vector3 (input_pos.z, input_pos.x, input_pos.y);
+
+		Vector3 pn = Vector3.zero;
+		pn.x = noise_3D(vector3Add(input_pos + ttxyz * speedFactor,randx + 100.0f ));//randx + 100.0f + input_pos + ttxyz * speedFactor);
+		pn.y = noise_3D(vector3Add(posyzx + ttyzx* speedFactor,randy + 200.0f) );
+		pn.z = noise_3D(vector3Add(poszxy + ttzxy * speedFactor,randz + 300.0f ) );
+		pn =vector3Add(pn,-0.5f);
+
+		Vector3 newp = input_pos + pn * translationScaleFactor;
+		return new Vector4(newp.x,newp.y,newp.z, 1);
 	}
 }
 

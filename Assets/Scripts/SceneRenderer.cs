@@ -127,7 +127,15 @@ public class SceneRenderer : MonoBehaviour
         _renderCurveIngredientsMaterial.SetBuffer("_DnaControlPointsInfos", ComputeBufferManager.Instance.CurveControlPointsInfos);
         _renderCurveIngredientsMaterial.SetBuffer("_DnaControlPointsNormals", ComputeBufferManager.Instance.CurveControlPointsNormals);
         _renderCurveIngredientsMaterial.SetBuffer("_DnaControlPoints", ComputeBufferManager.Instance.CurveControlPointsPositions);
-    }
+
+		// Cutaway
+		_renderCurveIngredientsMaterial.SetInt("_NumCutObjects", SceneManager.Instance.NumCutObjects);
+		_renderCurveIngredientsMaterial.SetBuffer( "_CutInfos", ComputeBufferManager.Instance.CutInfos);
+		_renderCurveIngredientsMaterial.SetBuffer( "_CutScales", ComputeBufferManager.Instance.CutScales);
+		_renderCurveIngredientsMaterial.SetBuffer( "_CutPositions", ComputeBufferManager.Instance.CutPositions);
+		_renderCurveIngredientsMaterial.SetBuffer( "_CutRotations", ComputeBufferManager.Instance.CutRotations);
+		_renderCurveIngredientsMaterial.SetBuffer( "_ProteinCutFilters", ComputeBufferManager.Instance.ProteinCutFilters);
+	}
 
     private void SetProteinShaderParams()
     {

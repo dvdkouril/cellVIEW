@@ -4,6 +4,8 @@ using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityStandardAssets.ImageEffects;
+
 using Component = UnityEngine.Component;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -49,11 +51,12 @@ public class NavigateCamera : MonoBehaviour
     private float deltaTime = 0;
     private float lastUpdateTime = 0;
     private float deltaScroll;
-    
+	private bool fog_offset;
     public bool freeMoveMode = false;
     public bool lockInteractions = false;
     public bool animateCameraIn = false;
     public bool animateCameraOut = false;
+	public bool fog_enable = false;
 
     public Vector3 StoredPosition;
 
@@ -160,6 +163,17 @@ public class NavigateCamera : MonoBehaviour
                 Distance = Vector3.Distance(transform.position, TargetPosition);
             }
         }
+
+		float dist = Vector3.Distance(transform.position,TargetPosition);
+		PersistantSettings.Instance.SpeedFactor = (dist*2.0f)/320.0f;
+		//Debug.Log ("distance to target is "+d.ToString());
+		//Globalb fog start distance is d-50
+		//Debug.Log (PersistantSettings.Instance.SpeedFactor.ToString());
+		if (fog_enable){
+			dist = (fog_offset)? dist : dist-50;
+			if (dist < 50) dist =  50;
+			GetComponent<GlobalFog>().startDistance = dist;
+		}
     }
 
     private float leftClickTimeStart;
@@ -182,6 +196,12 @@ public class NavigateCamera : MonoBehaviour
 		PersistantSettings.Instance.SpeedFactor = 2.0f;
 	}
 
+	public void setFogOffset(bool off){
+		fog_offset = off;
+	}
+	public void setFogEnable(bool value){
+		fog_enable = value;
+	}
     private void OnGUI()
 	{
 		if (Event.current.keyCode == KeyCode.R)
@@ -238,7 +258,12 @@ public class NavigateCamera : MonoBehaviour
 			//distance to target;
 			float d = Vector3.Distance(transform.position,TargetPosition);
 			PersistantSettings.Instance.SpeedFactor = (d*2.0f)/320.0f;
-			Debug.Log (PersistantSettings.Instance.SpeedFactor.ToString());
+			//Debug.Log ("distance to target is "+d.ToString());
+			//Globalb fog start distance is d-50
+			//Debug.Log (PersistantSettings.Instance.SpeedFactor.ToString());
+			if (fog_enable){
+				GetComponent<GlobalFog>().startDistance = (fog_offset)? d : d-50;
+			}
         }
 
         if (Event.current.keyCode == KeyCode.W)

@@ -46,7 +46,8 @@ public class SceneManager : MonoBehaviour
     public List<int> ProteinAtomStart = new List<int>();
     public List<int> ProteinToggleFlags = new List<int>();
     public List<string> ProteinNames = new List<string>();
-    public List<Vector4> ProteinAtoms = new List<Vector4>();
+	public List<Vector4> ProteinInstanceID = new List<Vector4>();//start,nb,?,?
+	public List<Vector4> ProteinAtoms = new List<Vector4>();
     public List<Vector4> ProteinColors = new List<Vector4>();
     public List<float> ProteinBoundingSpheres = new List<float>();
     public List<Vector4> ProteinAtomClusters = new List<Vector4>();
@@ -145,38 +146,6 @@ public class SceneManager : MonoBehaviour
 		//gameObject.transform.rotation = Quaternion.AngleAxis (-90, Vector3.forward);
     }
 
-	public void AddRecipeIngredientsGameObject(JSONNode recipeData,GameObject parent){
-		for (int j = 0; j < recipeData["ingredients"].Count; j++)
-		{
-			var jitem = new GameObject(recipeData["ingredients"][j]["name"]);
-			jitem.transform.parent=parent.transform;
-		}
-	}
-
-	public void buildHierarchy(JSONNode resultData){
-		scene_name = resultData ["recipe"] ["name"];
-		var root = new GameObject(resultData["recipe"]["name"]);//in case we want to have more than one recipe loaded
-		//create empty null object or sphere ?
-		if (resultData["cytoplasme"] != null)
-		{
-			var cyto = new GameObject("cytoplasme");
-			cyto.transform.parent = root.transform;
-			AddRecipeIngredientsGameObject(resultData["cytoplasme"], cyto);
-		}
-		
-		for (int i = 0; i < resultData["compartments"].Count; i++)
-		{
-			var comp = new GameObject(resultData["compartments"].GetKey(i));
-			comp.transform.parent = root.transform;
-			var surface = new GameObject("surface"+ i.ToString());
-			surface.transform.parent = comp.transform;
-			AddRecipeIngredientsGameObject(resultData["compartments"][i]["interior"],surface);
-			var interior = new GameObject("interior"+ i.ToString());
-			interior.transform.parent = comp.transform;
-			AddRecipeIngredientsGameObject(resultData["compartments"][i]["surface"], interior);
-		}
-	}
-
 	void DoBrownianMotion()
 	{
 		ComputeShaderManager.Instance.BrownianMotionCS.SetInt("_Enable", Application.isPlaying ? Convert.ToInt32(PersistantSettings.Instance.EnableBrownianMotion) : 0);
@@ -239,17 +208,19 @@ public class SceneManager : MonoBehaviour
 
     #region Protein_functions
 
-    public void AddIngredient(string ingredientName, Bounds bounds, List<Vector4> atomSpheres, Color color, List<float> clusterLevels = null)
+    public void AddIngredient(string ingredientName, Bounds bounds, List<Vector4> atomSpheres, Color color, List<float> clusterLevels = null,
+	                          bool nolod = false)
     {
         if (ProteinNames.Contains(ingredientName)) return;
-
-        if (NumLodLevels != 0 && NumLodLevels != clusterLevels.Count)
-            throw new Exception("Uneven cluster levels number: " + ingredientName);
-
+		if (clusterLevels != null) {
+			if (NumLodLevels != 0 && NumLodLevels != clusterLevels.Count)
+				throw new Exception ("Uneven cluster levels number: " + ingredientName);
+		}
         if (color == null) { color = Helper.GetRandomColor(); }
         
         ProteinNames.Add(ingredientName);
-        ProteinColors.Add(color);
+		ProteinInstanceID.Add (new Vector4(ProteinInstanceInfos.Count,0,0,0));
+		ProteinColors.Add(color);
         ProteinToggleFlags.Add(1);
         ProteinBoundingSpheres.Add(Vector3.Magnitude(bounds.extents));
 
@@ -257,20 +228,20 @@ public class SceneManager : MonoBehaviour
         ProteinAtomStart.Add(ProteinAtoms.Count);
         ProteinAtoms.AddRange(atomSpheres);
 
-        if (clusterLevels != null)
-        {
-            NumLodLevels = clusterLevels.Count;
-
-            foreach (var level in clusterLevels)
-            {
-                var numClusters = Math.Max(atomSpheres.Count * level, 5);
-                var clusterSpheres = KMeansClustering.GetClusters(atomSpheres, (int)numClusters);
-
-                ProteinAtomClusterCount.Add(clusterSpheres.Count);
-                ProteinAtomClusterStart.Add(ProteinAtomClusters.Count);
-                ProteinAtomClusters.AddRange(clusterSpheres);
-            }
-        }
+        if (clusterLevels != null) {
+			NumLodLevels = clusterLevels.Count;
+			foreach (var level in clusterLevels) {
+				var numClusters = Math.Max (atomSpheres.Count * level, 5);
+				List<Vector4> clusterSpheres;
+				if (!nolod)
+					clusterSpheres = KMeansClustering.GetClusters (atomSpheres, (int)numClusters);
+				else
+					clusterSpheres = new List<Vector4>(atomSpheres);
+				ProteinAtomClusterCount.Add (clusterSpheres.Count);
+				ProteinAtomClusterStart.Add (ProteinAtomClusters.Count);
+				ProteinAtomClusters.AddRange (clusterSpheres);
+			}
+		}
     }
 
     public void AddIngredientInstance(string ingredientName, Vector3 position, Quaternion rotation, int unitId = 0)
@@ -281,6 +252,11 @@ public class SceneManager : MonoBehaviour
         }
 
         var ingredientId = ProteinNames.IndexOf(ingredientName);
+
+		//ProteinInstanceID [ingredientId].x = ;//start
+		ProteinInstanceID [ingredientId] = new Vector4 (ProteinInstanceID [ingredientId].x, ProteinInstanceInfos.Count - ProteinInstanceID [ingredientId].x, 0, 0);
+		//ProteinInstanceID [ingredientId].y = ProteinInstanceInfos.Count-ProteinInstanceID [ingredientId].x;//nbInstance
+
 
         Vector4 instancePosition = position;
         instancePosition.w = ProteinBoundingSpheres[ingredientId];
@@ -298,7 +274,7 @@ public class SceneManager : MonoBehaviour
 
     public void AddCurveIngredient(string name, string pdbName)
     {
-        if (ProteinNames.Contains(name)) return;
+		if (CurveIngredientsNames.Contains(name)) return;
         
         int numSteps = 1;
         float twistAngle = 0;
@@ -317,7 +293,7 @@ public class SceneManager : MonoBehaviour
             CurveIngredientsAtomStart.Add(CurveIngredientsAtoms.Count);
             CurveIngredientsAtoms.AddRange(atomSpheres);
         }
-        else if (name.Contains("mRNA"))
+        else if (name.Contains("RNA"))
         {
             numSteps = 12;
             twistAngle = 34.3f;
@@ -389,7 +365,7 @@ public class SceneManager : MonoBehaviour
 
         for (int i = 0; i < positions.Count; i++)
         {
-            CurveControlPointsInfos.Add(new Vector4(curveId, curveType, 0, 0));
+			CurveControlPointsInfos.Add(new Vector4(curveId, curveType, (int)InstanceState.Normal, 0));
         }
 
         CurveControlPointsNormals.AddRange(normals);
@@ -398,7 +374,7 @@ public class SceneManager : MonoBehaviour
         //Debug.Log(positions.Count);
     }
     
-    private List<Vector4> ResampleControlPoints(List<Vector4> controlPoints, float segmentLength)
+    public List<Vector4> ResampleControlPoints(List<Vector4> controlPoints, float segmentLength)
     {
         int nP = controlPoints.Count;
         //insert a point at the end and at the begining
@@ -566,6 +542,7 @@ public class SceneManager : MonoBehaviour
 
         // Clear ingredient data
         ProteinNames.Clear();
+		ProteinInstanceID.Clear ();
         ProteinColors.Clear();
         ProteinToggleFlags.Clear();
         ProteinBoundingSpheres.Clear();
@@ -596,7 +573,10 @@ public class SceneManager : MonoBehaviour
 		var tree = GameObject.Find ("TreeView").GetComponent<RecipeTreeUI> ();
 		if (tree != null)
 			tree.ClearTree ();
-    }
+		var root = GameObject.Find (scene_name);
+		if (root != null)
+			GameObject.DestroyImmediate (root);
+	}
 
     private void CheckBufferSizes()
     {

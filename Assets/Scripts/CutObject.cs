@@ -104,7 +104,7 @@ public class CutObject : MonoBehaviour
             SceneManager.Instance.CutObjects.Add(this);
         }
 		//check the tree
-		setTree ();
+		if (_tree.enabled) setTree ();
     }
 
     void OnDisable()

@@ -37,6 +37,8 @@ public class UImanager : MonoBehaviour {
 	public SSAOPro ssao1;
 	public SSAOPro ssao2;
 
+	public GameObject showonly;
+
 	private bool started = false;
 	private RectTransform panel;
 	private string[] recipe_liste;
@@ -55,9 +57,23 @@ public class UImanager : MonoBehaviour {
 	private int current_panel=-1;
 	private Sprite[] sprites;
 	private bool cross_advmode = false; // advanced mode for cross section in UI
-
+	private bool jitter = true;
+	private float jitter_time = 0.0f;
+	private bool coroutine_done = true;
+	private bool jitter_started = false;
+	private bool back_to_ori = false;
+	private List<Vector4> random_pos = new List<Vector4>();
+	private List<Vector4> store_pos = new List<Vector4>();
 	public GameObject helpPanel;
 	public Tutorial tuto;
+
+	public void showOnly(string elem){
+		
+	}
+
+	public void toggleJitter(bool value){
+		jitter = value;
+	}
 
 	void  gatherRecipes(){
 		if (AllRecipes == null) 
@@ -278,6 +294,7 @@ public class UImanager : MonoBehaviour {
 				//recipe_ingredient_ui.populateRecipe (PersistantSettings.Instance.hierarchy);
 			}
 			started = true;
+			nvcamera.lockInteractions = false;
 		}
 		if (buttonName == "unselect") {
 			if (nvcamera.handleMode){
@@ -427,10 +444,109 @@ public class UImanager : MonoBehaviour {
 			crossmode.NotifyToggleOn(toggles_handle[2]);
 		}
 	}
+	//function MoveObject (thisTransform : Transform, startPos : Vector3, endPos : Vector3, time : float) : IEnumerator {
+	//	var i = 0.0;
+	//	var rate = 1.0/time;
+	//	while (i < 1.0) {
+	//		i += Time.deltaTime * rate;
+	//		thisTransform.position = Vector3.Lerp(startPos, endPos, i);
+	//		yield; 
+	//	}
+	//}
+	//what the end position
+	//startCoRoutine ?
+	public IEnumerator MoveToPosition(float duration)
+	{
+		coroutine_done = false;
+		float speed = PersistantSettings.Instance.SpeedFactor;
+		float scale = PersistantSettings.Instance.MoveFactor*5;
+		float elapsedTime = 0;
+		Vector3 startingPos;
+		List<Vector4> random_dir = new List<Vector4> (SceneManager.Instance.CurveControlPointsPositions);
+		bool inited = false;
+		while (elapsedTime < duration)
+		{
+			List<Vector4> new_pos = new List<Vector4> (SceneManager.Instance.CurveControlPointsPositions);
+			for (int i=0;i<SceneManager.Instance.CurveControlPointsPositions.Count;i++){
+				Vector3 pos = new Vector3(SceneManager.Instance.CurveControlPointsPositions[i].x,SceneManager.Instance.CurveControlPointsPositions[i].y,SceneManager.Instance.CurveControlPointsPositions[i].z);
+				Vector3 rpos;
+				if (!inited) {
+					random_dir[i] = new Vector3(( UnityEngine.Random.value-0.5f) , ( UnityEngine.Random.value-0.5f) , 
+					                  (UnityEngine.Random.value-0.5f) )*scale;
+				}
+				rpos = random_dir[i];
+				pos = Vector3.Lerp(pos,pos + rpos, (elapsedTime / duration));
+				SceneManager.Instance.CurveControlPointsPositions[i] = new Vector4(pos.x,pos.y,pos.z,SceneManager.Instance.CurveControlPointsPositions[i].z) ;
+			}
+			if (!inited) 
+				inited = true;
+			elapsedTime += Time.deltaTime;
+			ComputeBufferManager.Instance.CurveControlPointsPositions.SetData(SceneManager.Instance.CurveControlPointsPositions.ToArray());
+			yield return null;
+			//List<Vector4> normals = SceneManager.Instance.GetSmoothNormals(SceneManager.Instance.CurveControlPointsPositions);		
+		}
+		coroutine_done = true;
+	}
+
+	public void randomChangeCurve(){
+		float duration = 2.0f;//1/PersistantSettings.Instance.SpeedFactor;
+		//coroutine_done
+		if (store_pos.Count == 0)
+			store_pos = new List<Vector4> (SceneManager.Instance.CurveControlPointsPositions);
+		if (random_pos.Count ==0)
+			random_pos = new List<Vector4> (SceneManager.Instance.CurveControlPointsPositions);
+		float speed = PersistantSettings.Instance.SpeedFactor*10;
+		float scale = PersistantSettings.Instance.MoveFactor * 5 * PersistantSettings.Instance.Scale;
+		int ingredientId = SceneManager.Instance.CurveIngredientsNames.IndexOf ("interior2_HIV_RNA");
+		if (ingredientId < 0)
+			return;
+		if (SceneManager.Instance.CurveIngredientToggleFlags [ingredientId] == 0)
+			return;
+		//random_pos = new List<Vector4> (SceneManager.Instance.CurveControlPointsPositions);
+
+		for (int i=0;i<SceneManager.Instance.CurveControlPointsPositions.Count;i++){
+			Vector3 pos = new Vector3(SceneManager.Instance.CurveControlPointsPositions[i].x,SceneManager.Instance.CurveControlPointsPositions[i].y,SceneManager.Instance.CurveControlPointsPositions[i].z);
+			Vector3 target = Vector3.zero;//new Vector3(store_pos.x,store_pos.y,store_pos.z);
+			Vector3 origin = Vector3.zero;//new Vector3(pos.x,pos.y,pos.z);
+			if (!jitter_started) {
+				Vector3 rand = new Vector3(( UnityEngine.Random.value-0.5f) , ( UnityEngine.Random.value-0.5f) , 
+				                           (UnityEngine.Random.value-0.5f) )*scale;//UnityEngine.Random.onUnitSphere*scale;
+					random_pos[i] = new Vector4(rand.x,rand.y,rand.z,1 );
+			}
+			if (back_to_ori){
+				//go from current position->store_pos
+				target = new Vector3(store_pos[i].x,store_pos[i].y,store_pos[i].z);
+				origin = new Vector3(pos.x,pos.y,pos.z);
+			}
+			else {
+				//go toward the random position
+				target = new Vector3(store_pos[i].x+random_pos[i].x,store_pos[i].y+random_pos[i].y,store_pos[i].z+random_pos[i].z);
+				origin =  new Vector3(pos.x,pos.y,pos.z);//new Vector3(pos.x,pos.y,pos.z);
+			}
+			Vector3 rpos = random_pos[i];
+			//pos = Vector3.Lerp(pos,pos + rpos, (jitter_time / duration));
+			pos = Vector3.Lerp(origin,target, Time.deltaTime*2.0f);//(jitter_time / duration));
+			SceneManager.Instance.CurveControlPointsPositions[i] = new Vector4(pos.x,pos.y,pos.z,SceneManager.Instance.CurveControlPointsPositions[i].z) ;
+		}
+		jitter_time += Time.deltaTime*speed;
+		if (!jitter_started)
+			jitter_started = true; 
+		if (jitter_time > duration) {
+			jitter_started=false;
+			jitter_time = 0.0f;
+			back_to_ori=!back_to_ori;
+		}
+		//List<Vector4> normals = SceneManager.Instance.GetSmoothNormals(SceneManager.Instance.CurveControlPointsPositions);		
+		ComputeBufferManager.Instance.CurveControlPointsPositions.SetData(SceneManager.Instance.CurveControlPointsPositions.ToArray());
+		//ComputeBufferManager.Instance.CurveControlPointsNormals.SetData(normals.ToArray());
+	}
+
 	void Update () 
     {
 
-        nvcamera.lockInteractions = helpPanel.active ;
+		//mouse over tooltip or button ? righclick button show only
+
+        if (!started) nvcamera.lockInteractions = false ;
 		//lock if the mouse is in the toolbar?
 
 		//TODO make possible to change the width of the panel  in game mode
@@ -491,5 +607,13 @@ public class UImanager : MonoBehaviour {
 
 		if (!started)
 			recipe_ingredient_ui.m_myTreeView.toggleInGame (false);
+		if (jitter) {
+			//jitter the RNA
+			randomChangeCurve();
+			//if (coroutine_done) {
+			//	coroutine_done = false;
+			//	StartCoroutine(MoveToPosition(1.0f));//*PersistantSettings.Instance.SpeedFactor));
+			//}
+		}
 	}
 }

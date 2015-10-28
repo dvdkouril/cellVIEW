@@ -122,14 +122,17 @@ public static class PdbLoader
 
                 var name = line.Substring(12, 4).Trim();
                 var chainId = line.Substring(23, 3)[0];
-                var residueId = int.Parse(line.Substring(23, 3));
+				var residueId = line.Substring(23, 3);//int.Parse(line.Substring(23, 3));
 
                 // Remove numbers from the name
                 var t = Regex.Replace(name, @"[\d-]", string.Empty).Trim();
                 var symbolId = Array.IndexOf(AtomHelper.AtomSymbols, t[0].ToString());
                 if (symbolId < 0)
                 {
-                    throw new Exception("Atom symbol unknown: " + name);
+					symbolId = Array.IndexOf(AtomHelper.AtomSymbols, "A");
+					name = "A";
+					Debug.Log ("Atom symbol unknown: " + name+ " "+t+"\n"+line+"\n"+path);
+					//throw new Exception("Atom symbol unknown: " + name+ " "+t+"\n"+line+"\n"+path);
                 }
 
                 var atom = new Atom
@@ -208,7 +211,7 @@ public static class PdbLoader
 public class Atom
 {
     public int residue;
-    public int residueId;
+    public string residueId;
 
     public char symbol;
     public char chainId;
@@ -219,10 +222,11 @@ public class Atom
 
 public static class AtomHelper
 {
-    public static float[] AtomRadii = { 1.548f, 1.100f, 1.400f, 1.348f, 1.880f, 1.808f };
-    public static string[] AtomSymbols = { "C", "H", "N", "O", "P", "S" };
+	public static float[] AtomRadii = { 1.548f, 1.100f, 1.400f, 1.348f, 1.880f, 1.808f,1.100f };
+    public static string[] AtomSymbols = { "C", "H", "N", "O", "P", "S", "A" };
 
     // Color scheme taken from http://life.nthu.edu.tw/~fmhsu/rasframe/COLORS.HTM
+	// not used
     public static Color[] AtomColors = 
     { 
         new Color(100,100,100) / 255,     // C        light grey
@@ -230,7 +234,8 @@ public static class AtomHelper
         new Color(143,143,255) / 255,     // N        light blue
         new Color(220,10,10) / 255,       // O        red         
         new Color(255,165,0) / 255,       // P        orange      
-        new Color(255,200,50) / 255       // S        yellow      
+        new Color(255,200,50) / 255 ,      // S        yellow    
+		new Color(255,255,255) / 255     // D        white   
     };
 
     public static bool ContainsACarbonOnly(List<Atom> atoms)

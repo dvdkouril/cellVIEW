@@ -26,7 +26,9 @@ public class CutObjectWindow : EditorWindow
 
     void OnGUI()
     {
-        EditorUtility.SetDirty(PersistantSettings.Instance);
+		if (this.cutObject == null)
+			return;
+		EditorUtility.SetDirty(PersistantSettings.Instance);
 
         GUIStyle style_1 = new GUIStyle();
         style_1.margin = new RectOffset(10, 10, 10, 10);
@@ -159,9 +161,19 @@ public class CustomWindow : EditorWindow
             {
                 CellPackLoader.LoadCellPackResults();
             }
-			if (GUILayout.Button("Load lipids membrane results"))
+			if (GUILayout.Button("Load lipids membrane results 1"))
 			{
 				CellPackLoader.LoadLipidsTest();
+				SceneManager.Instance.UploadAllData();
+			}
+			if (GUILayout.Button("Load lipids membrane results 2"))
+			{
+				CellPackLoader.LoadLipidsTest_lw();
+				SceneManager.Instance.UploadAllData();
+			}
+			if (GUILayout.Button("Load lipids membrane results 3"))
+			{
+				CellPackLoader.LoadLipidsTest_bin();
 				SceneManager.Instance.UploadAllData();
 			}
 

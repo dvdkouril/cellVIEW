@@ -71,6 +71,7 @@ namespace SimpleJSON
         public virtual int Count                   { get { return 0;    } }
 		public virtual string GetKey(int aIndex){ return ""; }
 		public virtual List<string> GetAllKeys(){ return null; }
+		public virtual void ChangeKey(string old_key,string new_key){ }
 
         public virtual void Add(JSONNode aItem)
         {
@@ -721,6 +722,11 @@ namespace SimpleJSON
 			return m_Dict.Keys.ToList();
 		}
 
+		public override void ChangeKey(string old_key,string new_key){
+			var value = m_Dict [old_key];
+			m_Dict.Remove (old_key);
+			m_Dict [new_key] = value;
+		}
 
         public override int Count
         {
