@@ -37,6 +37,10 @@ public class Focuson : MonoBehaviour
 	void OnMouseDown()
 	{
 		Camera.main.GetComponent<NavigateCamera>().hardFocusFlag = false;
+		if (Input.GetMouseButtonDown (0)) {
+			Debug.Log("ISWORKING!!!!");
+			Camera.main.GetComponent<NavigateCamera>().hardFocusFlag = true;
+		}
 		if (isDoubleClick == true && timerForDoubleClick < delay)
 		{
 			Debug.Log("ISWORKING!!!!");

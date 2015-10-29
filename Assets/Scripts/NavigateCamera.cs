@@ -228,7 +228,7 @@ public class NavigateCamera : MonoBehaviour
 		}        
 
         // Arc ball rotation
-        if (Event.current.type == EventType.mouseDrag && Event.current.button == 0)
+		if (Event.current.type == EventType.mouseDrag && Event.current.button == 0 && !handleMode)
         {
 			EulerAngleX += Event.current.delta.x * AcrBallRotationSpeed;
 			EulerAngleY += Event.current.delta.y * AcrBallRotationSpeed;
@@ -372,62 +372,63 @@ public class NavigateCamera : MonoBehaviour
             render._rightMouseDown = true;
             hardFocusFlag = doubleClick;
 
-            //Ray CameraRay = Camera.main.ScreenPointToRay(new Vector3(mousePos.x, Screen.height - mousePos.y, 0));
-            //RaycastHit hit;
+            Ray CameraRay = Camera.main.ScreenPointToRay(new Vector3(mousePos.x, Screen.height - mousePos.y, 0));
+            RaycastHit hit;
 
             //// If we hit an object
-            //if (Physics.Raycast(CameraRay, out hit, 10000))
-            //{
-            //    var transformHandle = hit.collider.gameObject.GetComponent<TransformHandle>();
-            //    // If we hit a new selectable object
-            //    if (transformHandle != null && transformHandle != _selectedTransformHandle)
-            //    {
-            //        if (hit.collider.gameObject.GetComponent<CutObject>().Display){
-            //            if (_selectedTransformHandle != null)
-            //            {
-            //                //Debug.Log("Reset");
-            //                _selectedTransformHandle.Disable();
-            //            }
-            //            //Debug.Log("Selected transform: " + transformHandle.gameObject.name);
-            //            transformHandle.Enable();
-            //            transformHandle.SetSelectionState(_currentState);
-            //            _selectedTransformHandle = transformHandle;
-            //            handleMode = true;
-            //        }
-            //        else {
-            //            render._mousePos = mousePos;
-            //            render._rightMouseDown = true;
-            //        }
-            //    }
-            //    // If we hit a non-selectable object
-            //    else if (transformHandle == null && _selectedTransformHandle != null)
-            //    {
-            //        //Debug.Log("Reset");
-            //        _selectedTransformHandle.Disable();
-            //        _selectedTransformHandle = null;
-            //        handleMode=false;
-            //    }
-            //    else {
-            //        render._mousePos = mousePos;
-            //        render._rightMouseDown = true;
-            //    }
-            //}
-            //// If we miss a hit
-            //else if (_selectedTransformHandle != null)
-            //{
-            //    //Debug.Log("Reset");
-            //    _selectedTransformHandle.Disable();
-            //    _selectedTransformHandle = null;
-            //    handleMode=false;
-            //    //check if hit a  protein
-            //    render._mousePos = mousePos;
+            if (Physics.Raycast(CameraRay, out hit, 10000))
+            {
+                var transformHandle = hit.collider.gameObject.GetComponent<TransformHandle>();
+                // If we hit a new selectable object
+                if (transformHandle != null && transformHandle != _selectedTransformHandle)
+                {
+                    if (hit.collider.gameObject.GetComponent<CutObject>().Display){
+                        if (_selectedTransformHandle != null)
+                       {
+                            //Debug.Log("Reset");
+                            _selectedTransformHandle.Disable();
+                        }
+                        //Debug.Log("Selected transform: " + transformHandle.gameObject.name);
+                        transformHandle.Enable();
+                        transformHandle.SetSelectionState(_currentState);
+                        _selectedTransformHandle = transformHandle;
+                        handleMode = true;
+                    }
+                    else {
+                        render._mousePos = mousePos;
+                        render._rightMouseDown = true;
+                   }
+                }
+                // If we hit a non-selectable object
+                else if (transformHandle == null && _selectedTransformHandle != null)
+                {
+                    //Debug.Log("Reset");
+                    _selectedTransformHandle.Disable();
+                    _selectedTransformHandle = null;
+                    handleMode=false;
+                }
+                else {
+                    render._mousePos = mousePos;
+                    render._rightMouseDown = true;
+                }
+            }
+            // If we miss a hit
+            else if (_selectedTransformHandle != null)
+            {
+                //Debug.Log("Reset");
+                _selectedTransformHandle.Disable();
+                _selectedTransformHandle = null;
+                handleMode=false;
+                //check if hit a  protein
+                render._mousePos = mousePos;
 
-            //    render._rightMouseDown = true;
-            //}
-            //else {
-            //    render._mousePos = mousePos;
-            //    render._rightMouseDown = true;
-            //}
+                render._rightMouseDown = true;
+            }
+            else {
+                render._mousePos = mousePos;
+                render._rightMouseDown = true;
+            }
+			if (handleMode) render._rightMouseDown = false;
         }
 
         if (Event.current.keyCode == KeyCode.Alpha1)
