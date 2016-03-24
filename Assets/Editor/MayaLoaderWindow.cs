@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using UnityEditor;
 using System.Collections;
-
+using System.Runtime.InteropServices;
 
 public class MayaLoaderWindow : EditorWindow {
 
@@ -27,9 +27,14 @@ public class MayaLoaderWindow : EditorWindow {
         }
     }
 
+
+    [DllImport("SharedMemDll")]
+    private static extern void load();
+
     void LoadMayaFile()
     {
-        MayaLoader.loadFile(filePath);
+        load();
+        //MayaLoader.loadFile(filePath);
     }
 
 }
