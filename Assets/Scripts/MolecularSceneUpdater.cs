@@ -19,29 +19,20 @@ public class MolecularSceneUpdater : MonoBehaviour {
     [DllImport("SharedMemDll")]
     private static extern void cleanupSharedMemory(IntPtr hMapFile, string pBuf);
     
-
-    //[DllImport("ShMemOpen")]
-    //private static extern void prepareSharedMemory(out IntPtr hMapFile, out string pBuf); // this is going to output hMapFile and pBuf
-    //[DllImport("ShMemRead")]
-    //private static extern void readSharedMemory(string pBuf); // Actually... this might even be not needed at all!
-    //// char * readSharedMemory(LPCTSTR pBuf)
-    //[DllImport("ShMemClose")]
-    //private static extern void cleanupSharedMemory(IntPtr hMapFile, string pBuf);
-    //// void cleanupSharedMemory(HANDLE hMapFile, LPCTSTR pBuf)
-
     void OnEnable () // it might be better to make this OnEnable()
     {
         //Debug.Log("MolecularSceneUpdater: OnEnable()");
+
         // DLL function call
         shMemBuf = prepareSharedMemory(out this.hMapFile);
         Debug.Log(PtrToStringUtf8(shMemBuf));
-        //readSharedMemory(this.pBuf);
     }
 	
-	void Update ()
+	void Update2()
     {
 
         //Debug.Log("MolecularSceneUpdater: Update()");
+
         // DLL function call
         //char* readSharedMemory(LPCTSTR pBuf);
         //Debug.Log("pBuf = " + this.pBuf);
@@ -65,9 +56,32 @@ public class MolecularSceneUpdater : MonoBehaviour {
 
     }
 
+    /*
+        Update function that uses the new ("binary") format of shared memory data
+    */
+    void Update()
+    {
+
+        //Debug.Log("MolecularSceneUpdater: Update()");
+
+        // DLL function call
+        double[] shMemContent = new double[256];
+
+        Marshal.Copy(shMemBuf, shMemContent, 0, 256); // last param is number of array elements to copy
+
+        var x = shMemContent[0];
+        var y = shMemContent[1];
+        var z = shMemContent[2];
+
+        GameObject cb = GameObject.Find("Cube");
+        cb.transform.position = new Vector3((float)x, (float)y, (float)z);
+
+    }
+
     void OnDisable ()
     {
         //Debug.Log("MolecularSceneUpdater: OnDisable()");
+
         // DLL function call
         cleanupSharedMemory(this.hMapFile, this.pBuf);
     }
