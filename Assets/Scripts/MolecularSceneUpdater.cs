@@ -25,46 +25,51 @@ public class MolecularSceneUpdater : MonoBehaviour {
 
         // DLL function call
         shMemBuf = prepareSharedMemory(out this.hMapFile);
-        Debug.Log(PtrToStringUtf8(shMemBuf));
-    }
-	
-	void Update2()
-    {
-
-        //Debug.Log("MolecularSceneUpdater: Update()");
-
-        // DLL function call
-        //char* readSharedMemory(LPCTSTR pBuf);
-        //Debug.Log("pBuf = " + this.pBuf);
-        string str = PtrToStringUtf8(shMemBuf);
-        Debug.Log(str);
-
-        char[] delimiters = { ' ' };
-        var tokens = str.Split(delimiters);
-
-        // remove trash after first \n
-        int index = tokens[2].IndexOf("\n");
-        if (index > 0)
-            tokens[2] = tokens[2].Substring(0, index);
-
-        var x = float.Parse(tokens[0]);
-        var y = float.Parse(tokens[1]);
-        var z = float.Parse(tokens[2]);
-
-        GameObject cb = GameObject.Find("Cube");
-        cb.transform.position = new Vector3(x, y, z);
-
+        Debug.Log(PtrToStringUtf8(shMemBuf)); // leaving this here just because it does funny output into Console
     }
 
     /*
-        Update function that uses the new ("binary") format of shared memory data
+        now loading more than one obj info
     */
     void Update()
     {
 
         //Debug.Log("MolecularSceneUpdater: Update()");
 
-        // DLL function call
+        float[] shMemContent = new float[256];
+
+        Marshal.Copy(shMemBuf, shMemContent, 0, 256); // last param is number of array elements to copy
+
+        int numObjsLoaded = 3;
+        for (int i = 0; i < numObjsLoaded; ++i)
+        {
+            var x = shMemContent[i*3 + 0];
+            var y = shMemContent[i*3 + 1];
+            var z = shMemContent[i*3 + 2];
+
+            GameObject cb = GameObject.Find("Cube" + i);
+            if (cb == null)
+            { // game object for this object has not been yet created
+                //cb = new GameObject("Cube" + i);
+                cb = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                cb.name = "Cube" + i;
+                cb.transform.position = new Vector3(x, y, z);
+            } else
+            {
+                cb.transform.position = new Vector3(x, y, z);
+            }
+        }
+
+    }
+
+    /*
+        Update function that uses the new ("binary") format of shared memory data
+    */
+    void Update2()
+    {
+
+        //Debug.Log("MolecularSceneUpdater: Update()");
+        
         double[] shMemContent = new double[256];
 
         Marshal.Copy(shMemBuf, shMemContent, 0, 256); // last param is number of array elements to copy
